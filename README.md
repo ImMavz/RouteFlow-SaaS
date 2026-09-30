@@ -107,6 +107,18 @@ Proyecto desarrollado para la carrera de Ingenieria de Sistemas por:
 
 ---
 
+### Instalacion de CodeGraph
+1. Ejecutar: npx @colbymchenry/codegraph
+2. Selecciona Yes
+3. Agrega o desmarca los agentes que uses o no uses (barra de espacio)
+4. Presiona enter
+5. Espera hasta que termine y te salte el anuncio
+6. Ejecuta: codegraph init
+
+### Sincronización
+Utilizar el comando: codegraph sync
+Mas adelante se implementará un hook para que cada pull actualice el grafo.
+
 ## Licencia
 
 Este proyecto es desarrollado con fines estrictamente academicos.
