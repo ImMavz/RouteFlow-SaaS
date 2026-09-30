@@ -163,7 +163,6 @@ Así tendrás siempre la base de datos de CodeGraph al día con los últimos cam
 
 > **Nota para todo el equipo:** Como la carpeta `.git/` no se sube a GitHub, cada integrante del equipo que use CodeGraph deberá agregar este hook en su máquina local siguiendo estos tres pasos.
 
-
 ## Licencia
 
 Este proyecto es desarrollado con fines estrictamente academicos.
