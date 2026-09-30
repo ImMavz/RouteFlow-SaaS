@@ -1,0 +1,119 @@
+name: routeflow
+
+services:
+  # ---------- Base de datos (PostgreSQL + PostGIS) ----------
+  postgres:
+    image: postgis/postgis:16-3.4
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-routeflow}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-routeflow_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-routeflow}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------- OSRM: 1) descarga el mapa (solo la primera vez) ----------
+  osrm-download:
+    image: curlimages/curl:8.10.1
+    user: "0:0"
+    environment:
+      OSRM_MAP_URL: ${OSRM_MAP_URL:-https://download.geofabrik.de/south-america/colombia-latest.osm.pbf}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        if [ -f /data/map.osm.pbf ]; then
+          echo "Mapa ya descargado, se omite."
+        else
+          echo "Descargando mapa desde $${OSRM_MAP_URL} ..."
+          curl -fL --retry 3 -o /data/map.osm.pbf.part "$${OSRM_MAP_URL}" && mv /data/map.osm.pbf.part /data/map.osm.pbf
+        fi
+    volumes:
+      - osrm-data:/data
+
+  # ---------- OSRM: 2) preprocesa el mapa (solo la primera vez) ----------
+  osrm-prepare:
+    image: ghcr.io/project-osrm/osrm-backend:latest
+    depends_on:
+      osrm-download:
+        condition: service_completed_successfully
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        if [ -f /data/map.osrm.mldgr ]; then
+          echo "Datos OSRM ya preparados, se omite."
+          exit 0
+        fi
+        osrm-extract -p /opt/car.lua /data/map.osm.pbf
+        osrm-partition /data/map.osrm
+        osrm-customize /data/map.osrm
+    volumes:
+      - osrm-data:/data
+
+  # ---------- OSRM: 3) servidor de ruteo ----------
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend:latest
+    restart: unless-stopped
+    depends_on:
+      osrm-prepare:
+        condition: service_completed_successfully
+    command: osrm-routed --algorithm mld --max-table-size 100 /data/map.osrm
+    ports:
+      - "5000:5000"
+    volumes:
+      - osrm-data:/data
+
+  # ---------- Servicio de optimización (Python / FastAPI / OR-Tools) ----------
+  optimizer:
+    build: ./optimizer
+    restart: unless-stopped
+    environment:
+      OSRM_URL: http://osrm:5000
+      SOLVER_TIME_LIMIT_SECONDS: ${SOLVER_TIME_LIMIT_SECONDS:-10}
+      MAX_LOCATIONS: "100"
+    depends_on:
+      osrm:
+        condition: service_started
+    ports:
+      - "8000:8000" # útil en desarrollo (Swagger en /docs); en producción quitar
+
+  # ---------- Backend (NestJS) ----------
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      PORT: "3000"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-routeflow}:${POSTGRES_PASSWORD:-routeflow_dev}@postgres:5432/${POSTGRES_DB:-routeflow}
+      OPTIMIZER_URL: http://optimizer:8000
+      JWT_SECRET: ${JWT_SECRET:-cambia-este-secreto-en-dev}
+      FRONTEND_URL: http://localhost:5173
+    depends_on:
+      postgres:
+        condition: service_healthy
+      optimizer:
+        condition: service_started
+    ports:
+      - "3000:3000"
+
+  # ---------- Frontend (React + Vite servido con Nginx) ----------
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  postgres-data:
+  osrm-data:
