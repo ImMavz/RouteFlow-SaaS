@@ -116,8 +116,32 @@ Proyecto desarrollado para la carrera de Ingenieria de Sistemas por:
 6. Ejecuta: codegraph init
 
 ### Sincronización
-Utilizar el comando: codegraph sync
+Utilizar el comando: codegraph sync &
 Mas adelante se implementará un hook para que cada pull actualice el grafo.
+
+## 🔄 Automatización de Sincronización de CodeGraph (Git Hook)
+
+Para mantener la base de datos de CodeGraph actualizada automáticamente cada vez que alguien del equipo baje cambios del repositorio, se recomienda configurar un Git Hook de tipo `post-merge` en tu entorno local.
+
+### Pasos de Configuración Local
+
+1. **Crear o editar el archivo del Hook:**
+   En la raíz del proyecto, abre o crea el archivo `.git/hooks/post-merge` (sin extensión) usando tu editor de texto o la terminal:
+   ```bash
+   nano .git/hooks/post-merge
+Agregar la instrucción de sincronización:
+Pega el siguiente fragmento de código dentro del archivo:
+
+Bash
+#!/bin/bash
+echo "🔄 Se detectaron cambios tras el git pull. Sincronizando CodeGraph..."
+codegraph sync "$(git rev-parse --show-toplevel)" --quiet &
+Otorgar permisos de ejecución:
+Otorga permisos de ejecución al archivo mediante la terminal (Linux, macOS o Git Bash en Windows):
+
+Bash
+chmod +x .git/hooks/post-merge
+Nota: Como la carpeta .git/ no se sincroniza en el repositorio remoto de GitHub por razones de seguridad, cada integrante del equipo debe realizar este proceso de 3 pasos en su máquina local.
 
 ## Licencia
 
