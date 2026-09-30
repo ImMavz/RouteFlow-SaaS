@@ -116,7 +116,7 @@ Proyecto desarrollado para la carrera de Ingenieria de Sistemas por:
 6. Ejecuta: codegraph init
 
 ### Sincronización
-Utilizar el comando: codegraph sync &
+Utilizar el comando: codegraph sync &&
 Mas adelante se implementará un hook para que cada pull actualice el grafo.
 
 ## 🔄 Automatización de Sincronización de CodeGraph (Git Hook)
@@ -125,23 +125,44 @@ Para mantener la base de datos de CodeGraph actualizada automáticamente cada ve
 
 ### Pasos de Configuración Local
 
-1. **Crear o editar el archivo del Hook:**
-   En la raíz del proyecto, abre o crea el archivo `.git/hooks/post-merge` (sin extensión) usando tu editor de texto o la terminal:
-   ```bash
-   nano .git/hooks/post-merge
-Agregar la instrucción de sincronización:
-Pega el siguiente fragmento de código dentro del archivo:
+### 1. Abre el archivo del hook `post-merge`
 
-Bash
+En la raíz de tu proyecto, abre la carpeta oculta `.git/hooks/` y crea (o edita) un archivo llamado `post-merge`, sin ninguna extensión como `.sh` o `.txt`.
+
+```bash
+nano .git/hooks/post-merge
+```
+
+### 2. Agrega el comando de sincronización de CodeGraph
+
+Pega el siguiente contenido dentro del archivo:
+
+```bash
 #!/bin/bash
-echo "🔄 Se detectaron cambios tras el git pull. Sincronizando CodeGraph..."
-codegraph sync "$(git rev-parse --show-toplevel)" --quiet &
-Otorgar permisos de ejecución:
-Otorga permisos de ejecución al archivo mediante la terminal (Linux, macOS o Git Bash en Windows):
 
-Bash
+echo "🔄 Se detectaron cambios tras el git pull. Sincronizando CodeGraph..."
+
+codegraph sync "$(git rev-parse --show-toplevel)" --quiet &
+```
+
+> **Nota:** El símbolo `&` al final permite que la sincronización se ejecute en segundo plano, para que tu terminal no se quede congelada mientras CodeGraph actualiza el grafo.
+
+### 3. Dale permisos de ejecución
+
+En sistemas basados en Unix (Linux, macOS o Git Bash en Windows), haz que el script sea ejecutable ejecutando el siguiente comando:
+
+```bash
 chmod +x .git/hooks/post-merge
-Nota: Como la carpeta .git/ no se sincroniza en el repositorio remoto de GitHub por razones de seguridad, cada integrante del equipo debe realizar este proceso de 3 pasos en su máquina local.
+```
+
+## ¿Cómo funciona?
+
+Cada vez que ejecutes `git pull` en la terminal, Git actualizará tu código e inmediatamente disparará el script `post-merge`, el cual llamará a `codegraph sync`.
+
+Así tendrás siempre la base de datos de CodeGraph al día con los últimos cambios del equipo.
+
+> **Nota para todo el equipo:** Como la carpeta `.git/` no se sube a GitHub, cada integrante del equipo que use CodeGraph deberá agregar este hook en su máquina local siguiendo estos tres pasos.
+
 
 ## Licencia
 
