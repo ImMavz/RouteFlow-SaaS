@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@colbymchenry/codegraph": "^1.6.1"
+  }
+}
