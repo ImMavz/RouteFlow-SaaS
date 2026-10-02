@@ -106,7 +106,6 @@ Proyecto desarrollado para la carrera de Ingenieria de Sistemas por:
    npm run dev
 
 ---
-
 ### Instalacion de CodeGraph
 1. Ejecutar: npx @colbymchenry/codegraph
 2. Selecciona Yes
