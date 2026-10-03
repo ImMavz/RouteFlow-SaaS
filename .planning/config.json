@@ -1,0 +1,10 @@
+{
+  "project_name": "RouteFlow-SaaS",
+  "mode": "gsd",
+  "version": "1.0.0",
+  "workflow": {
+    "auto_verify": true,
+    "atomic_commits": true,
+    "principles": ["ponytail", "caveman", "gsd"]
+  }
+}

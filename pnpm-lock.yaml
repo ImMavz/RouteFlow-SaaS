@@ -11,6 +11,9 @@ importers:
       '@colbymchenry/codegraph':
         specifier: ^1.6.1
         version: 1.6.1
+      '@types/leaflet':
+        specifier: ^1.9.22
+        version: 1.9.22
 
 packages:
 
@@ -48,6 +51,12 @@ packages:
     resolution: {integrity: sha512-kdyJ7Y9Q7oAMioThrNlRvm/23JRMMTlfydqsUx07eYK6EZIKlOLPgX9yA/h0TGaorQ6sWkrvzqocpoY7DgFUQw==}
     hasBin: true
 
+  '@types/geojson@7946.0.16':
+    resolution: {integrity: sha512-6C8nqWur3j98U6+lXDfTUWIfgvZU+EumvpHKcYjujKH7woYyLj2sUmff0tRhrqM7BohUw7Pz3ZB1jj2gW9Fvmg==}
+
+  '@types/leaflet@1.9.22':
+    resolution: {integrity: sha512-h3lhECYEKDasG7LFHu+GiHqAvsgLuQvlJvVZzJDGONo3sEL+wUOqSFLnwkZlK0qVxnxbuGFW8iBlJNYs5wgndA==}
+
 snapshots:
 
   '@colbymchenry/codegraph-darwin-arm64@1.6.1':
@@ -76,3 +85,9 @@ snapshots:
       '@colbymchenry/codegraph-linux-x64': 1.6.1
       '@colbymchenry/codegraph-win32-arm64': 1.6.1
       '@colbymchenry/codegraph-win32-x64': 1.6.1
+
+  '@types/geojson@7946.0.16': {}
+
+  '@types/leaflet@1.9.22':
+    dependencies:
+      '@types/geojson': 7946.0.16

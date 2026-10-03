@@ -1,5 +1,6 @@
 {
   "devDependencies": {
-    "@colbymchenry/codegraph": "^1.6.1"
+    "@colbymchenry/codegraph": "^1.6.1",
+    "@types/leaflet": "^1.9.22"
   }
 }

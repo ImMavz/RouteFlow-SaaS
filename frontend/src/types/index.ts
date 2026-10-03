@@ -4,6 +4,7 @@ export type AppView =
   | 'dashboard' 
   | 'planner' 
   | 'live-tracking' 
+  | 'osrm-lab'
   | 'fleet' 
   | 'shipments' 
   | 'analytics' 

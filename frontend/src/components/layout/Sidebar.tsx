@@ -10,6 +10,7 @@ import {
   LogOut, 
   ChevronDown, 
   Sparkles,
+  MapPinned,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -56,6 +57,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: Radio,
       badge: '18 En Ruta',
       badgeColor: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30 animate-pulse',
+    },
+    {
+      id: 'osrm-lab' as AppView,
+      label: 'OSRM Lab · Mapa real',
+      icon: MapPinned,
+      badge: 'TEST',
+      badgeColor: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
     },
     {
       id: 'fleet' as AppView,

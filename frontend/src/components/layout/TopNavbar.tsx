@@ -37,6 +37,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
     dashboard: { title: 'Torre de Control', subtitle: 'Monitoreo de entregas en tiempo real y KPI operativos' },
     planner: { title: 'Planificador VRP', subtitle: 'Optimización masiva y asignación combinatoria de vehículos' },
     'live-tracking': { title: 'Telemetría & GPS', subtitle: 'Seguimiento satelital de vehículos y paradas en ruta' },
+    'osrm-lab': { title: 'OSRM Lab', subtitle: 'Prueba visual de rutas y geometrías del motor OSRM local' },
     fleet: { title: 'Gestión de Flota', subtitle: 'Capacidades de carga (kg/m³), combustible y estado técnico' },
     shipments: { title: 'Envíos & Órdenes', subtitle: 'Gestión de paquetes, ventanas horarias y albaranes' },
     analytics: { title: 'Costos & Eficiencia', subtitle: 'Kilometraje ahorrado, consumo de combustible y emisiones' },

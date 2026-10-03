@@ -10,6 +10,7 @@ import { FleetView } from './components/views/FleetView';
 import { ShipmentsView } from './components/views/ShipmentsView';
 import { AnalyticsView } from './components/views/AnalyticsView';
 import { SettingsView } from './components/views/SettingsView';
+import { OsrmLabView } from './components/views/OsrmLabView';
 import { RouteMapPreview } from './components/dashboard/RouteMapPreview';
 import { NewRouteModal } from './components/dashboard/NewRouteModal';
 import { mockCurrentUser } from './data/mockData';
@@ -115,6 +116,10 @@ const AppContent: React.FC = () => {
             </div>
           )}
 
+          {currentView === 'osrm-lab' && (
+            <OsrmLabView />
+          )}
+
           {currentView === 'fleet' && (
             <FleetView />
           )}
@@ -160,10 +165,11 @@ const QuickViewPill: React.FC<{
     { id: 'dashboard', label: '3. Dashboard (Torre de Control)' },
     { id: 'planner', label: '4. Planificador VRP' },
     { id: 'live-tracking', label: '5. Telemetría GPS' },
-    { id: 'fleet', label: '6. Flota Vehicular' },
-    { id: 'shipments', label: '7. Envíos & Paradas' },
-    { id: 'analytics', label: '8. Analíticas & Costos' },
-    { id: 'settings', label: '9. Configuración' },
+    { id: 'osrm-lab', label: '6. OSRM Lab (Mapa real)' },
+    { id: 'fleet', label: '7. Flota Vehicular' },
+    { id: 'shipments', label: '8. Envíos & Paradas' },
+    { id: 'analytics', label: '9. Analíticas & Costos' },
+    { id: 'settings', label: '10. Configuración' },
   ];
 
   return (
