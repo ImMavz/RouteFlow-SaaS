@@ -104,7 +104,7 @@ const AppContent: React.FC = () => {
 
   // Render SaaS Authenticated Layout
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#070b13] text-slate-800 dark:text-slate-100 flex transition-colors duration-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#090d16] text-slate-800 dark:text-slate-100 flex transition-colors duration-150">
       
       {/* Sidebar Navigation */}
       <Sidebar
@@ -120,8 +120,8 @@ const AppContent: React.FC = () => {
 
       {/* Main Content Area */}
       <div 
-        className={`flex-1 flex flex-col min-w-0 transition-all duration-300 ${
-          sidebarCollapsed ? 'lg:pl-20' : 'lg:pl-72'
+        className={`flex-1 flex flex-col min-w-0 transition-all duration-200 ease-out ${
+          sidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'
         }`}
       >
         {/* Sticky Top Navbar */}
@@ -133,7 +133,7 @@ const AppContent: React.FC = () => {
         />
 
         {/* Dynamic Page Views */}
-        <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-6 max-w-7xl w-full mx-auto">
           {currentView === 'dashboard' && (
             <DashboardView
               onOpenNewRouteModal={() => setIsNewRouteModalOpen(true)}
@@ -208,12 +208,12 @@ const QuickViewPill: React.FC<{
   ];
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-3 right-3 z-50">
       {open ? (
-        <div className="p-3 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200 dark:border-slate-800 shadow-2xl space-y-2 animate-in fade-in slide-in-from-bottom-2 text-xs max-w-xs">
-          <div className="flex items-center justify-between pb-1.5 border-b border-slate-100 dark:border-slate-800">
-            <span className="font-bold text-[11px] uppercase tracking-wider text-slate-500">
-              Navegador de Pantallas SaaS
+        <div className="p-2.5 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-1.5 text-xs max-w-xs">
+          <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800">
+            <span className="font-semibold text-[10px] uppercase tracking-wider text-slate-500 font-mono">
+              Vistas
             </span>
             <button
               type="button"
@@ -223,7 +223,7 @@ const QuickViewPill: React.FC<{
               ✕
             </button>
           </div>
-          <div className="grid grid-cols-1 gap-1 max-h-64 overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 gap-0.5 max-h-60 overflow-y-auto pr-1">
             {views.map((v) => (
               <button
                 key={v.id}
@@ -232,9 +232,9 @@ const QuickViewPill: React.FC<{
                   onSelectView(v.id);
                   setOpen(false);
                 }}
-                className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                className={`w-full text-left px-2 py-1 rounded text-xs font-medium transition-colors cursor-pointer ${
                   currentView === v.id
-                    ? 'bg-emerald-500 text-white font-semibold'
+                    ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-semibold'
                     : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
@@ -247,10 +247,10 @@ const QuickViewPill: React.FC<{
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-full bg-slate-900/90 dark:bg-slate-800/90 text-white border border-slate-700/60 shadow-xl backdrop-blur-md text-xs font-semibold hover:scale-105 transition-all cursor-pointer"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 shadow-sm text-xs font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
         >
-          <Layers className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Vistas: <strong className="text-emerald-400 capitalize">{currentView}</strong></span>
+          <Layers className="w-3.5 h-3.5 text-slate-500" />
+          <span className="font-mono text-[11px] capitalize">{currentView}</span>
         </button>
       )}
     </div>

@@ -140,76 +140,175 @@ export const OsrmLabView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      <section className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-[#10231f] p-6 text-white shadow-xl dark:border-slate-800">
-        <div className="absolute right-0 top-0 h-48 w-48 rounded-full bg-emerald-400/10 blur-3xl" />
-        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div className="mb-3 flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-300">
-              <MapPinned className="h-4 w-4" /> OSRM laboratory
-            </div>
-            <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">Visor de rutas geográficas</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-emerald-50/70">
-              Consulta tu contenedor local o pega la respuesta JSON para dibujar la ruta sobre un mapa real.
-            </p>
+    <div className="space-y-3 pb-10">
+      
+      {/* Top Banner */}
+      <section className="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
+              <MapPinned className="h-4 w-4 text-blue-600" />
+              OSRM Lab · Laboratorio de Enrutamiento Vial
+            </h1>
+            <span className="px-1.5 py-0.2 rounded font-mono text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+              v5.27
+            </span>
           </div>
-          <div className="flex items-center gap-2 rounded-full border border-emerald-300/20 bg-white/5 px-3 py-2 text-xs text-emerald-100">
-            <span className="h-2 w-2 rounded-full bg-emerald-300 shadow-[0_0_12px_#6ee7b7]" /> localhost:5000
-          </div>
+          <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+            Valida respuestas directas del motor OSRM local e inspecciona geometrías GeoJSON sobre el mapa.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 font-mono text-xs">
+          <span className="flex items-center gap-1.5 px-2 py-1 rounded bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-[11px]">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            localhost:5000
+          </span>
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,0.78fr)_minmax(0,1.22fr)]">
-        <section className="space-y-5 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800/80 dark:bg-[#0c1324]">
-          <div className="flex items-start gap-3">
-            <div className="rounded-xl bg-emerald-500/10 p-2.5 text-emerald-600 dark:text-emerald-400"><Route className="h-5 w-5" /></div>
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+        
+        {/* Left Form: Endpoint and JSON input */}
+        <section className="space-y-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] p-4">
+          <div className="flex items-start gap-2.5">
+            <Route className="h-4 w-4 text-blue-600 mt-0.5" />
             <div>
-              <h2 className="font-bold text-slate-900 dark:text-white">Obtener una ruta</h2>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Usa la URL `/route` con `geometries=geojson`.</p>
+              <h2 className="text-xs font-semibold text-slate-900 dark:text-white">Consultar Endpoint</h2>
+              <p className="text-[11px] text-slate-500">Ruta `/route` con `geometries=geojson` y perfil vial.</p>
             </div>
           </div>
 
-          <label className="block text-xs font-bold text-slate-600 dark:text-slate-300" htmlFor="osrm-endpoint">Endpoint OSRM</label>
-          <input id="osrm-endpoint" value={endpoint} onChange={(event) => setEndpoint(event.target.value)} className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 font-mono text-[11px] text-slate-800 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200" />
-          <button type="button" onClick={fetchRoute} disabled={isLoading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-500 disabled:cursor-wait disabled:opacity-60">
-            <Play className="h-4 w-4" /> {isLoading ? 'Consultando OSRM...' : 'Consultar y dibujar ruta'}
+          <div>
+            <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1" htmlFor="osrm-endpoint">
+              URL OSRM
+            </label>
+            <input 
+              id="osrm-endpoint" 
+              value={endpoint} 
+              onChange={(event) => setEndpoint(event.target.value)} 
+              className="w-full rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-2.5 py-1.5 font-mono text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-blue-500" 
+            />
+          </div>
+
+          <button 
+            type="button" 
+            onClick={fetchRoute} 
+            disabled={isLoading} 
+            className="flex w-full items-center justify-center gap-1.5 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-700 disabled:opacity-60 cursor-pointer shadow-none"
+          >
+            <Play className="h-3.5 w-3.5 fill-current" /> 
+            <span>{isLoading ? 'Consultando OSRM...' : 'Consultar y Graficar'}</span>
           </button>
 
-          <div className="flex items-center gap-2 pt-2 text-[11px] font-semibold text-slate-500 dark:text-slate-400"><ClipboardPaste className="h-4 w-4" /> O pega aquí el JSON que devuelve Docker</div>
-          <textarea value={jsonText} onChange={(event) => setJsonText(event.target.value)} className="h-64 w-full resize-y rounded-xl border border-slate-200 bg-slate-950 p-3 font-mono text-[10px] leading-relaxed text-emerald-100 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-800" spellCheck={false} />
-          <div className="flex gap-2">
-            <button type="button" onClick={applyJson} className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-700 transition hover:border-emerald-500 hover:text-emerald-600 dark:border-slate-800 dark:text-slate-200"><Upload className="h-4 w-4" /> Ver JSON</button>
-            <button type="button" onClick={() => { setJsonText(exampleJson); setParsedRoute(parseOsrmJson(JSON.parse(exampleJson))); setError(''); }} title="Restaurar ejemplo" className="rounded-xl border border-slate-200 px-3 text-slate-500 transition hover:border-emerald-500 hover:text-emerald-600 dark:border-slate-800"><RotateCcw className="h-4 w-4" /></button>
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between mb-1.5 text-[11px]">
+              <span className="font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
+                <ClipboardPaste className="h-3.5 w-3.5" /> 
+                Payload JSON
+              </span>
+              <button 
+                type="button" 
+                onClick={() => { setJsonText(exampleJson); setParsedRoute(parseOsrmJson(JSON.parse(exampleJson))); setError(''); }} 
+                title="Restaurar ejemplo" 
+                className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center gap-1 font-mono text-[10px] cursor-pointer"
+              >
+                <RotateCcw className="h-3 w-3" /> Restaurar
+              </button>
+            </div>
+            
+            <textarea 
+              value={jsonText} 
+              onChange={(event) => setJsonText(event.target.value)} 
+              className="h-56 w-full resize-y rounded-md border border-slate-200 dark:border-slate-800 bg-slate-900 p-2.5 font-mono text-[10px] leading-relaxed text-slate-200 outline-none focus:ring-1 focus:ring-blue-500" 
+              spellCheck={false} 
+            />
           </div>
-          {error && <p className="rounded-xl border border-rose-500/20 bg-rose-500/10 p-3 text-xs font-medium text-rose-600 dark:text-rose-300">{error}</p>}
-          <p className="flex gap-2 text-[11px] leading-relaxed text-slate-400"><CircleHelp className="mt-0.5 h-3.5 w-3.5 shrink-0" /> Las coordenadas de OSRM vienen como longitud, latitud; el visor las convierte al formato del mapa.</p>
+
+          <button 
+            type="button" 
+            onClick={applyJson} 
+            className="flex w-full items-center justify-center gap-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-colors"
+          >
+            <Upload className="h-3.5 w-3.5" /> 
+            <span>Interpretar JSON Manual</span>
+          </button>
+
+          {error && (
+            <p className="rounded-md border border-rose-500/20 bg-rose-500/10 p-2.5 text-xs text-rose-600 dark:text-rose-400 font-mono">
+              {error}
+            </p>
+          )}
+
+          <p className="flex items-start gap-1.5 text-[10px] text-slate-400 leading-tight">
+            <CircleHelp className="h-3.5 w-3.5 shrink-0 mt-0.5" /> 
+            Coordenadas OSRM [lon, lat] son transmutadas a [lat, lon] para Leaflet.
+          </p>
         </section>
 
-        <section className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-800/80 dark:bg-[#0c1324]">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
-            <div className="flex items-center gap-2"><Code2 className="h-4 w-4 text-emerald-500" /><span className="text-sm font-bold text-slate-900 dark:text-white">Mapa de prueba</span></div>
-            <div className="flex gap-2 text-[10px] font-bold uppercase tracking-wider text-slate-400"><span>{parsedRoute.coordinates.length} puntos</span><span className="text-emerald-500">{parsedRoute.source === 'geometry' ? 'traza vial' : 'puntos de matriz'}</span></div>
+        {/* Right Map Canvas */}
+        <section className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0f172a] flex flex-col justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 px-4 py-2.5">
+            <div className="flex items-center gap-1.5">
+              <Code2 className="h-3.5 w-3.5 text-blue-600" />
+              <span className="text-xs font-semibold text-slate-900 dark:text-white">Mapa de Ejecución</span>
+            </div>
+            <div className="flex gap-2 text-[10px] font-mono text-slate-500">
+              <span>{parsedRoute.coordinates.length} puntos</span>
+              <span className="text-blue-600 dark:text-blue-400">
+                {parsedRoute.source === 'geometry' ? 'traza vial' : 'matriz'}
+              </span>
+            </div>
           </div>
-          <div className="relative h-[520px] w-full bg-slate-200">
+
+          <div className="relative h-[480px] w-full bg-slate-100 dark:bg-slate-950">
             <MapContainer center={center} zoom={14} scrollWheelZoom className="h-full w-full" bounds={bounds}>
               <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               <FitRouteBounds coordinates={routeLine} />
-              <Polyline positions={routeLine} pathOptions={{ color: '#059669', weight: 6, opacity: 0.9 }} />
+              <Polyline positions={routeLine} pathOptions={{ color: '#2563eb', weight: 4, opacity: 0.9 }} />
               {routeLine.map((point, index) => (
-                <CircleMarker key={`${point[0]}-${point[1]}-${index}`} center={point} radius={index === 0 || index === routeLine.length - 1 ? 9 : 5} pathOptions={{ color: '#ffffff', weight: 3, fillColor: index === 0 ? '#0f766e' : index === routeLine.length - 1 ? '#f59e0b' : '#10b981', fillOpacity: 1 }}>
-                  <Tooltip direction="top" offset={[0, -8]}>{index === 0 ? 'Origen' : index === routeLine.length - 1 ? 'Destino' : `Punto ${index + 1}`}</Tooltip>
+                <CircleMarker 
+                  key={`${point[0]}-${point[1]}-${index}`} 
+                  center={point} 
+                  radius={index === 0 || index === routeLine.length - 1 ? 7 : 4} 
+                  pathOptions={{ 
+                    color: '#ffffff', 
+                    weight: 2, 
+                    fillColor: index === 0 ? '#2563eb' : index === routeLine.length - 1 ? '#f59e0b' : '#3b82f6', 
+                    fillOpacity: 1 
+                  }}
+                >
+                  <Tooltip direction="top" offset={[0, -6]}>
+                    {index === 0 ? 'Origen' : index === routeLine.length - 1 ? 'Destino' : `Punto ${index + 1}`}
+                  </Tooltip>
                 </CircleMarker>
               ))}
             </MapContainer>
-            <div className="pointer-events-none absolute bottom-4 left-4 z-[1000] flex gap-2 rounded-xl border border-white/60 bg-white/90 p-2.5 text-[10px] font-semibold text-slate-700 shadow-lg backdrop-blur dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-200">
-              <span className="rounded-lg bg-slate-100 px-2 py-1 dark:bg-slate-800">Origen</span><span className="rounded-lg bg-amber-100 px-2 py-1 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">Destino</span>
+
+            {/* Overlaid legend pill */}
+            <div className="pointer-events-none absolute bottom-3 left-3 z-[1000] flex gap-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-1.5 text-[10px] font-mono shadow-sm">
+              <span className="rounded bg-blue-500/10 text-blue-600 px-1.5 py-0.5">Origen</span>
+              <span className="rounded bg-amber-500/10 text-amber-600 px-1.5 py-0.5">Destino</span>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-px bg-slate-100 dark:bg-slate-800">
-            <div className="bg-white p-4 dark:bg-[#0c1324]"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Distancia</p><p className="mt-1 text-lg font-extrabold text-slate-900 dark:text-white">{formatDistance(parsedRoute.distanceMeters)}</p></div>
-            <div className="bg-white p-4 dark:bg-[#0c1324]"><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Duración</p><p className="mt-1 text-lg font-extrabold text-slate-900 dark:text-white">{formatDuration(parsedRoute.durationSeconds)}</p></div>
+
+          {/* Metrics summary */}
+          <div className="grid grid-cols-2 divide-x divide-slate-100 dark:divide-slate-800 border-t border-slate-100 dark:border-slate-800 font-mono">
+            <div className="p-3">
+              <p className="text-[10px] uppercase text-slate-400">Distancia Total</p>
+              <p className="mt-0.5 text-base font-bold text-slate-900 dark:text-white">
+                {formatDistance(parsedRoute.distanceMeters)}
+              </p>
+            </div>
+            <div className="p-3">
+              <p className="text-[10px] uppercase text-slate-400">Tiempo de Conducción</p>
+              <p className="mt-0.5 text-base font-bold text-slate-900 dark:text-white">
+                {formatDuration(parsedRoute.durationSeconds)}
+              </p>
+            </div>
           </div>
         </section>
+
       </div>
     </div>
   );

@@ -9,10 +9,10 @@ import {
   Settings, 
   LogOut, 
   ChevronDown, 
-  Sparkles,
   MapPinned,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Cpu
 } from 'lucide-react';
 import type { AppView, User } from '../../types';
 
@@ -43,54 +43,56 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Visión General',
       icon: LayoutDashboard,
       badge: undefined,
+      badgeColor: undefined,
     },
     {
       id: 'planner' as AppView,
       label: 'Planificador VRP',
       icon: RouteIcon,
       badge: 'VRP v2',
-      badgeColor: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+      badgeColor: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
     },
     {
       id: 'live-tracking' as AppView,
       label: 'Monitoreo en Vivo',
       icon: Radio,
-      badge: '18 En Ruta',
-      badgeColor: 'bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30 animate-pulse',
+      badge: '18',
+      badgeColor: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
     },
     {
       id: 'osrm-lab' as AppView,
-      label: 'OSRM Lab · Mapa real',
+      label: 'OSRM Lab',
       icon: MapPinned,
-      badge: 'TEST',
-      badgeColor: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
+      badge: 'Lab',
+      badgeColor: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700',
     },
     {
       id: 'fleet' as AppView,
       label: 'Flota & Vehículos',
       icon: Truck,
       badge: '22',
-      badgeColor: 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700',
+      badgeColor: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700',
     },
     {
       id: 'shipments' as AppView,
       label: 'Envíos & Paradas',
       icon: Package,
-      badge: '432 Hoy',
-      badgeColor: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30',
+      badge: '432',
+      badgeColor: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700',
     },
     {
       id: 'analytics' as AppView,
-      label: 'Costos & Ahorro',
+      label: 'Costos & Eficiencia',
       icon: BarChart3,
-      badge: '-24% CO₂',
-      badgeColor: 'bg-teal-500/15 text-teal-600 dark:text-teal-400 border-teal-500/30',
+      badge: undefined,
+      badgeColor: undefined,
     },
     {
       id: 'settings' as AppView,
-      label: 'Configuración VRP',
+      label: 'Configuración',
       icon: Settings,
       badge: undefined,
+      badgeColor: undefined,
     },
   ];
 
@@ -105,34 +107,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {mobileOpen && (
         <div
           onClick={onCloseMobile}
-          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-xs lg:hidden transition-opacity"
         />
       )}
 
-      {/* Main Sidebar Element */}
+      {/* Main Sidebar */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 flex flex-col bg-white dark:bg-[#0a0f1d] border-r border-slate-200/80 dark:border-slate-800/80 transition-all duration-300 ease-in-out lg:translate-x-0 ${
-          mobileOpen ? 'translate-x-0 w-72' : '-translate-x-full lg:translate-x-0'
-        } ${collapsed ? 'lg:w-20' : 'lg:w-72'}`}
+        className={`fixed top-0 bottom-0 left-0 z-50 flex flex-col bg-white dark:bg-[#0b1120] border-r border-slate-200 dark:border-slate-800 transition-all duration-200 ease-out lg:translate-x-0 ${
+          mobileOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0'
+        } ${collapsed ? 'lg:w-16' : 'lg:w-64'}`}
       >
         {/* Brand Header */}
-        <div className="h-18 flex items-center justify-between px-4 border-b border-slate-200/80 dark:border-slate-800/80">
-          <div className="flex items-center gap-3 overflow-hidden cursor-pointer" onClick={() => handleSelect('dashboard')}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 ring-2 ring-emerald-400/20 flex-shrink-0">
-              <Truck className="w-5 h-5 text-white" />
+        <div className="h-14 flex items-center justify-between px-3 border-b border-slate-200 dark:border-slate-800">
+          <div 
+            className="flex items-center gap-2.5 overflow-hidden cursor-pointer" 
+            onClick={() => handleSelect('dashboard')}
+          >
+            <div className="w-7 h-7 rounded bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center font-bold text-xs flex-shrink-0">
+              <Truck className="w-4 h-4 stroke-[2]" />
             </div>
             {!collapsed && (
-              <div className="flex flex-col truncate">
-                <div className="flex items-center gap-1.5">
-                  <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">
-                    RouteFlow
-                  </span>
-                  <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                    SaaS
-                  </span>
-                </div>
-                <span className="text-[11px] text-slate-400 truncate">
-                  Logística y Ruteo VRP
+              <div className="flex items-center gap-2 truncate">
+                <span className="font-semibold text-sm tracking-tight text-slate-900 dark:text-white">
+                  RouteFlow
+                </span>
+                <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                  B2B
                 </span>
               </div>
             )}
@@ -142,35 +142,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             type="button"
             onClick={onToggleCollapse}
-            aria-label="Colapsar menú"
-            className="hidden lg:flex w-7 h-7 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/70 items-center justify-center transition-all cursor-pointer"
+            aria-label="Alternar menú"
+            className="hidden lg:flex w-6 h-6 rounded border border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/80 items-center justify-center transition-colors cursor-pointer"
           >
-            {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+            {collapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
           </button>
         </div>
 
-        {/* Tenant / Depot selector */}
+        {/* Tenant selector */}
         {!collapsed && (
-          <div className="p-3 mx-3 mt-3 rounded-xl bg-slate-100/70 dark:bg-slate-900/60 border border-slate-200/60 dark:border-slate-800/80 flex items-center justify-between">
-            <div className="flex items-center gap-2 truncate">
-              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
-              <div className="truncate">
-                <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">
-                  {currentUser.company}
-                </p>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                  Centro Operativo Principal
-                </p>
+          <div className="p-2 mx-2 mt-2 rounded-md bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between">
+            <div className="truncate">
+              <p className="text-xs font-medium text-slate-800 dark:text-slate-200 truncate leading-snug">
+                {currentUser.company}
+              </p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                  Hub Operativo Activo
+                </span>
               </div>
             </div>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 flex-shrink-0 ml-1" />
           </div>
         )}
 
         {/* Navigation links */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          <div className={`px-2 mb-2 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 ${collapsed ? 'hidden' : 'block'}`}>
-            Menú de Operaciones
+        <div className="flex-1 overflow-y-auto px-2 py-3 space-y-0.5">
+          <div className={`px-2 py-1 mb-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500 ${collapsed ? 'hidden' : 'block'}`}>
+            Operaciones
           </div>
 
           {menuItems.map((item) => {
@@ -182,19 +182,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 type="button"
                 onClick={() => handleSelect(item.id)}
                 title={collapsed ? item.label : undefined}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group cursor-pointer relative ${
+                className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer ${
                   isActive
-                    ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 shadow-sm shadow-emerald-500/5'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100/80 dark:hover:bg-slate-800/50'
+                    ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-900/60'
                 }`}
               >
-                {isActive && (
-                  <span className="absolute left-0 top-2 bottom-2 w-1 bg-emerald-500 rounded-r-full" />
-                )}
-                
                 <Icon
-                  className={`w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110 ${
-                    isActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'
+                  className={`w-4 h-4 flex-shrink-0 stroke-[1.75] ${
+                    isActive ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'
                   }`}
                 />
 
@@ -202,7 +198,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div className="flex-1 flex items-center justify-between truncate">
                     <span className="truncate">{item.label}</span>
                     {item.badge && (
-                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${item.badgeColor || ''}`}>
+                      <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded border ${item.badgeColor || ''}`}>
                         {item.badge}
                       </span>
                     )}
@@ -213,32 +209,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
           })}
         </div>
 
-        {/* VRP Status quick indicator */}
+        {/* Telemetry Status info */}
         {!collapsed && (
-          <div className="p-3 mx-3 mb-3 rounded-xl bg-gradient-to-br from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20">
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              Motor OR-Tools VRP
+          <div className="p-2.5 mx-2 mb-2 rounded-md bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80">
+            <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300 font-medium mb-1">
+              <span className="flex items-center gap-1.5">
+                <Cpu className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                OR-Tools VRP
+              </span>
+              <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1 py-0.2 rounded">
+                OSRM OK
+              </span>
             </div>
-            <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
-              Matriz OSRM activa. Algoritmo balanceando ventanas horarias en tiempo real.
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+              Matriz de distancias sincronizada con red vial.
             </p>
           </div>
         )}
 
         {/* User Card & Logout */}
-        <div className="p-3 border-t border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/40">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-slate-700 to-slate-900 border border-slate-300 dark:border-slate-700 flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-sm">
-                JH
+        <div className="p-2 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0b1120]">
+          <div className="flex items-center justify-between gap-1.5">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <div className="w-7 h-7 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[11px] font-bold text-slate-700 dark:text-slate-300 flex-shrink-0">
+                {currentUser.name.slice(0, 2).toUpperCase()}
               </div>
               {!collapsed && (
                 <div className="truncate">
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                  <p className="text-xs font-medium text-slate-900 dark:text-slate-100 truncate">
                     {currentUser.name}
                   </p>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                     {currentUser.role}
                   </p>
                 </div>
@@ -249,9 +250,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
               type="button"
               onClick={onLogout}
               title="Cerrar Sesión"
-              className="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 dark:hover:bg-rose-500/15 transition-all cursor-pointer flex-shrink-0"
+              className="p-1.5 rounded text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer flex-shrink-0"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>

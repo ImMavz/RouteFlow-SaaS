@@ -5,7 +5,6 @@ import {
   Clock, 
   CheckCircle2, 
   AlertTriangle, 
-  Sparkles, 
   ExternalLink,
   RotateCw
 } from 'lucide-react';
@@ -34,30 +33,29 @@ export const LiveRoutesTable: React.FC<LiveRoutesTableProps> = ({ onSelectRoute 
     switch (status) {
       case 'en_transito':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/25">
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-            En Tránsito
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
+            En Ruta
           </span>
         );
       case 'demorada':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/25">
-            <AlertTriangle className="w-3 h-3" />
-            Demora Vial
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+            <AlertTriangle className="w-3 h-3 text-amber-600" />
+            Demora
           </span>
         );
       case 'completada':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
-            <CheckCircle2 className="w-3 h-3" />
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
             Finalizada
           </span>
         );
       case 'optimizando':
         return (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25">
-            <Sparkles className="w-3 h-3 animate-spin" />
-            Optimizando VRP
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+            Optimizando
           </span>
         );
       default:
@@ -66,39 +64,41 @@ export const LiveRoutesTable: React.FC<LiveRoutesTableProps> = ({ onSelectRoute 
   };
 
   return (
-    <div className="p-6 rounded-2xl bg-white dark:bg-[#0c1324] border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
+    <div className="p-4 rounded-lg bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800">
       
       {/* Table Header and Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800/80">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
         <div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            Despacho y Ejecución de Rutas VRP
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-              {mockRoutes.length} rutas activas hoy
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              Despacho & Ejecución de Rutas VRP
+            </h3>
+            <span className="px-1.5 py-0.2 rounded font-mono text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+              {mockRoutes.length} rutas
             </span>
-          </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Estado de paradas, conductores asignados y porcentaje de eficiencia por corredor
+          </div>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            Secuencia de paradas, asignación vehicular y porcentaje de eficiencia
           </p>
         </div>
 
         {/* Filters and search */}
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Status filter tabs */}
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
+          <div className="flex items-center p-0.5 rounded-md bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
             {[
               { id: 'todas', label: 'Todas' },
               { id: 'en_transito', label: 'En Ruta' },
-              { id: 'demorada', label: 'Con Alerta' },
+              { id: 'demorada', label: 'Alertas' },
               { id: 'completada', label: 'Finalizadas' },
             ].map((tab) => (
               <button
                 key={tab.id}
                 type="button"
                 onClick={() => setFilterStatus(tab.id as any)}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all cursor-pointer ${
+                className={`px-2 py-1 rounded text-xs transition-colors cursor-pointer ${
                   filterStatus === tab.id
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-semibold'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium shadow-xs'
                     : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
                 }`}
               >
@@ -109,53 +109,50 @@ export const LiveRoutesTable: React.FC<LiveRoutesTableProps> = ({ onSelectRoute 
 
           {/* Table search */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Filtrar rutas..."
-              className="pl-8 pr-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              placeholder="Filtrar por código o placa..."
+              className="pl-8 pr-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
         </div>
       </div>
 
       {/* Table Element */}
-      <div className="overflow-x-auto mt-4">
+      <div className="overflow-x-auto mt-2">
         <table className="w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="border-b border-slate-100 dark:border-slate-800/80 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
-              <th className="py-3 px-3">Código & Corredor</th>
-              <th className="py-3 px-3">Vehículo / Conductor</th>
-              <th className="py-3 px-3">Estado</th>
-              <th className="py-3 px-3">Progreso de Paradas</th>
-              <th className="py-3 px-3">Distancia & ETA</th>
-              <th className="py-3 px-3 text-right">Eficiencia VRP</th>
-              <th className="py-3 px-3 text-right">Acciones</th>
+            <tr className="border-b border-slate-100 dark:border-slate-800 text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500">
+              <th className="py-2.5 px-3">Código & Corredor</th>
+              <th className="py-2.5 px-3">Vehículo / Conductor</th>
+              <th className="py-2.5 px-3">Estado</th>
+              <th className="py-2.5 px-3">Progreso de Paradas</th>
+              <th className="py-2.5 px-3">Distancia / Retorno</th>
+              <th className="py-2.5 px-3 text-right">Score VRP</th>
+              <th className="py-2.5 px-3 text-right"></th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
             {filteredRoutes.map((route) => {
               const progressPercent = Math.round((route.completedStops / route.stopsCount) * 100);
 
               return (
                 <tr 
                   key={route.id}
-                  className="hover:bg-slate-50/80 dark:hover:bg-slate-900/40 transition-colors group cursor-pointer"
+                  className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group cursor-pointer"
                   onClick={() => onSelectRoute?.(route)}
                 >
                   {/* Code & Name */}
-                  <td className="py-3.5 px-3">
+                  <td className="py-2.5 px-3">
                     <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-mono font-bold text-[10px]">
-                        {route.code.split('-')[2]}
-                      </div>
                       <div>
-                        <span className="font-mono font-bold text-slate-900 dark:text-white">
+                        <span className="font-semibold text-slate-900 dark:text-white">
                           {route.code}
                         </span>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-xs truncate font-medium">
+                        <p className="font-sans text-[11px] text-slate-500 dark:text-slate-400 max-w-xs truncate">
                           {route.name}
                         </p>
                       </div>
@@ -163,41 +160,41 @@ export const LiveRoutesTable: React.FC<LiveRoutesTableProps> = ({ onSelectRoute 
                   </td>
 
                   {/* Vehicle & Driver */}
-                  <td className="py-3.5 px-3">
+                  <td className="py-2.5 px-3">
                     <div>
                       <div className="flex items-center gap-1.5">
                         <Truck className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
                           {route.vehiclePlate}
                         </span>
                       </div>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      <span className="font-sans text-[11px] text-slate-500 dark:text-slate-400">
                         {route.driverName}
                       </span>
                     </div>
                   </td>
 
                   {/* Status Badge */}
-                  <td className="py-3.5 px-3">
+                  <td className="py-2.5 px-3">
                     {getStatusBadge(route.status)}
                   </td>
 
                   {/* Progress bar */}
-                  <td className="py-3.5 px-3 min-w-[140px]">
+                  <td className="py-2.5 px-3 min-w-[130px]">
                     <div className="flex items-center justify-between text-[11px] mb-1">
-                      <span className="font-medium text-slate-700 dark:text-slate-300">
-                        {route.completedStops} de {route.stopsCount} paradas
+                      <span className="font-sans text-slate-700 dark:text-slate-300">
+                        {route.completedStops}/{route.stopsCount}
                       </span>
-                      <span className="font-mono text-slate-500">{progressPercent}%</span>
+                      <span className="text-slate-400">{progressPercent}%</span>
                     </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
                       <div
-                        className={`h-full rounded-full transition-all duration-300 ${
+                        className={`h-full rounded-full transition-all duration-200 ${
                           progressPercent === 100
                             ? 'bg-emerald-500'
                             : route.status === 'demorada'
                             ? 'bg-amber-500'
-                            : 'bg-cyan-500'
+                            : 'bg-blue-600'
                         }`}
                         style={{ width: `${progressPercent}%` }}
                       />
@@ -205,40 +202,38 @@ export const LiveRoutesTable: React.FC<LiveRoutesTableProps> = ({ onSelectRoute 
                   </td>
 
                   {/* Distance & ETA */}
-                  <td className="py-3.5 px-3">
+                  <td className="py-2.5 px-3">
                     <div>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      <span className="font-medium text-slate-800 dark:text-slate-200">
                         {route.totalDistanceKm} km
                       </span>
-                      <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        <span>Retorno: {route.estimatedReturn}</span>
+                      <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
+                        <Clock className="w-3 h-3" />
+                        <span>{route.estimatedReturn}</span>
                       </div>
                     </div>
                   </td>
 
                   {/* Efficiency VRP */}
-                  <td className="py-3.5 px-3 text-right">
-                    <span className="inline-flex items-center gap-1 font-mono font-bold text-xs px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <td className="py-2.5 px-3 text-right">
+                    <span className="inline-block text-xs font-semibold text-slate-900 dark:text-white">
                       {route.efficiencyScore}%
                     </span>
-                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400/80 mt-0.5">
-                      -{route.timeSavedMin}m vs no-opt
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                      -{route.timeSavedMin}m
                     </p>
                   </td>
 
                   {/* Actions */}
-                  <td className="py-3.5 px-3 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); alert(`Detalles de ${route.code}`); }}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                        title="Ver detalles"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                  <td className="py-2.5 px-3 text-right">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); onSelectRoute?.(route); }}
+                      className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                      title="Ver ruta"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </button>
                   </td>
                 </tr>
               );
@@ -247,19 +242,16 @@ export const LiveRoutesTable: React.FC<LiveRoutesTableProps> = ({ onSelectRoute 
         </table>
       </div>
 
-      {/* Footer information */}
-      <div className="mt-4 pt-3 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800/60 gap-2">
-        <span className="flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
-          Rutas recalculadas dinámicamente según estado de tráfico OSRM
-        </span>
+      {/* Footer */}
+      <div className="mt-3 pt-2.5 flex flex-col sm:flex-row items-center justify-between text-[11px] font-mono text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 gap-2">
+        <span>Matriz OSRM activa · Perfil auto / camión</span>
         <button
           type="button"
-          onClick={() => alert('Actualizando rutas satelitales en tiempo real...')}
-          className="font-medium text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer"
+          onClick={() => alert('Sincronizando estado telemático...')}
+          className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
         >
           <RotateCw className="w-3 h-3" />
-          Sincronizar telemetría ahora
+          Actualizar telemetría
         </button>
       </div>
 

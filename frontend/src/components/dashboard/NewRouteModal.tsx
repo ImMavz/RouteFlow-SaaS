@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   X, 
-  Sparkles, 
+  Play, 
   Truck, 
   FileSpreadsheet, 
   CheckCircle2 
@@ -36,107 +36,93 @@ export const NewRouteModal: React.FC<NewRouteModalProps> = ({ isOpen, onClose, o
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-xl rounded-2xl bg-white dark:bg-[#0c1324] border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="w-full max-w-lg rounded-lg bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden relative">
         
         {/* Header */}
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 text-white flex items-center justify-center shadow-lg shadow-emerald-500/25">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                Planificador y Optimizador VRP
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Generación combinatoria asistida por Google OR-Tools & OSRM
-              </p>
-            </div>
+        <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+              Nueva Optimización VRP
+            </h3>
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
+              Cálculo combinatorio multi-parada con OR-Tools y OSRM
+            </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+            className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content */}
         {isOptimizing ? (
-          <div className="p-12 flex flex-col items-center justify-center text-center space-y-4">
+          <div className="p-8 flex flex-col items-center justify-center text-center space-y-3 font-mono">
             <div className="relative">
-              <div className="w-16 h-16 rounded-full border-4 border-emerald-500/20 border-t-emerald-500 animate-spin" />
+              <div className="w-10 h-10 rounded-full border-2 border-blue-500/20 border-t-blue-600 animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <Truck className="w-6 h-6 text-emerald-500 animate-pulse" />
+                <Truck className="w-4 h-4 text-blue-600" />
               </div>
             </div>
             <div>
-              <h4 className="text-base font-bold text-slate-900 dark:text-white">
-                Calculando Matriz Vial OSRM...
+              <h4 className="text-xs font-semibold text-slate-900 dark:text-white">
+                Calculando Matriz OSRM...
               </h4>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
-                Resolviendo ventanas horarias y balanceando carga cúbica entre 4 vehículos disponibles.
+              <p className="text-[11px] text-slate-500 font-sans mt-0.5">
+                Balanceando ventanas horarias y límites de carga en kg/m³.
               </p>
-            </div>
-            <div className="w-full max-w-xs bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-              <div className="h-full bg-emerald-500 w-3/4 animate-pulse rounded-full" />
             </div>
           </div>
         ) : optimizationDone ? (
-          <div className="p-12 flex flex-col items-center justify-center text-center space-y-3">
-            <div className="w-14 h-14 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
-              <CheckCircle2 className="w-8 h-8" />
-            </div>
-            <h4 className="text-base font-bold text-slate-900 dark:text-white">
-              ¡Rutas Optimizadas con Éxito!
+          <div className="p-8 flex flex-col items-center justify-center text-center space-y-2">
+            <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+              Rutas Optimizadas
             </h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Se crearon 3 rutas equilibradas. Ahorro estimado: 26.4% de kilometraje.
+            <p className="text-xs text-slate-500 font-mono">
+              3 rutas generadas · Ahorro de kilometraje: 26.4%
             </p>
           </div>
         ) : (
-          <form onSubmit={handleStartOptimization} className="p-6 space-y-4 text-xs">
+          <form onSubmit={handleStartOptimization} className="p-4 space-y-3 text-xs">
             
             {/* Depot Selector */}
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Depósito de Salida y Retorno (Hub Origen)
+              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Depósito de Salida / Retorno
               </label>
-              <div className="relative">
-                <select
-                  value={selectedHub}
-                  onChange={(e) => setSelectedHub(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 text-xs font-medium"
-                >
-                  <option value="hub-norte">Hub Principal Cali Norte (Zona Industrial Acopi)</option>
-                  <option value="hub-sur">Hub Secundario Sur (Pasoancho & Jamundí)</option>
-                  <option value="hub-centro">Centro de Distribución Express Centro</option>
-                </select>
-              </div>
+              <select
+                value={selectedHub}
+                onChange={(e) => setSelectedHub(e.target.value)}
+                className="w-full px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white text-xs focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="hub-norte">Hub Principal Cali Norte (Acopi)</option>
+                <option value="hub-sur">Hub Secundario Sur (Pasoancho)</option>
+                <option value="hub-centro">Centro de Distribución Express</option>
+              </select>
             </div>
 
             {/* Batch Orders Selection */}
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Lote de Envíos Pendientes
+              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Lote de Entregas Seleccionado
               </label>
-              <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/60 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                    <FileSpreadsheet className="w-4 h-4" />
-                  </div>
+              <div className="p-2.5 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileSpreadsheet className="w-4 h-4 text-blue-600" />
                   <div>
-                    <p className="font-semibold text-slate-900 dark:text-white text-xs">
+                    <p className="font-mono font-medium text-slate-900 dark:text-white text-xs">
                       Lote_Cali_Manana_38_Paradas.csv
                     </p>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                      38 entregas • 1,840 kg total • Ventanas 08:00 - 16:00
+                    <p className="text-[10px] font-mono text-slate-500">
+                      38 entregas · 1,840 kg · Ventanas 08:00 - 16:00
                     </p>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                   Listo
                 </span>
               </div>
@@ -144,37 +130,37 @@ export const NewRouteModal: React.FC<NewRouteModalProps> = ({ isOpen, onClose, o
 
             {/* Heuristic selection */}
             <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Heurística de Resolución VRP
+              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Algoritmo VRP
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setSelectedHeuristic('or-tools-vrp')}
-                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  className={`p-2.5 rounded-md border text-left transition-colors cursor-pointer ${
                     selectedHeuristic === 'or-tools-vrp'
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200 font-semibold'
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-900 dark:text-blue-200 font-medium'
                       : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  <p className="font-bold text-xs">Google OR-Tools (Recomendado)</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Óptimo global con búsqueda local Guiada (GLS).
+                  <p className="font-semibold text-xs">Google OR-Tools</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    Búsqueda local guiada (GLS).
                   </p>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setSelectedHeuristic('clarke-wright')}
-                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                  className={`p-2.5 rounded-md border text-left transition-colors cursor-pointer ${
                     selectedHeuristic === 'clarke-wright'
-                      ? 'border-emerald-500 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200 font-semibold'
+                      ? 'border-blue-500 bg-blue-500/10 text-blue-900 dark:text-blue-200 font-medium'
                       : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/40 text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  <p className="font-bold text-xs">Clarke & Wright Savings</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                    Rápido para contingencias inmediatas.
+                  <p className="font-semibold text-xs">Clarke & Wright</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">
+                    Ahorro heurístico rápido.
                   </p>
                 </button>
               </div>
@@ -182,44 +168,44 @@ export const NewRouteModal: React.FC<NewRouteModalProps> = ({ isOpen, onClose, o
 
             {/* Constraints Checklist */}
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                Restricciones de Negocio Activas
-              </label>
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <input type="checkbox" defaultChecked className="rounded text-emerald-600" />
-                  Ventanas horarias estrictas
+              <span className="block font-medium text-slate-700 dark:text-slate-300 text-[11px] mb-1.5">
+                Restricciones Activas
+              </span>
+              <div className="grid grid-cols-2 gap-1.5 text-[11px]">
+                <label className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 cursor-pointer">
+                  <input type="checkbox" defaultChecked className="rounded border-slate-300 text-blue-600" />
+                  Ventanas horarias
                 </label>
-                <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <input type="checkbox" defaultChecked className="rounded text-emerald-600" />
-                  Límite de capacidad en kg
+                <label className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 cursor-pointer">
+                  <input type="checkbox" defaultChecked className="rounded border-slate-300 text-blue-600" />
+                  Capacidad máx (kg)
                 </label>
-                <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <input type="checkbox" defaultChecked className="rounded text-emerald-600" />
-                  Volumen cúbico máx. (m³)
+                <label className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 cursor-pointer">
+                  <input type="checkbox" defaultChecked className="rounded border-slate-300 text-blue-600" />
+                  Volumen máx (m³)
                 </label>
-                <label className="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                  <input type="checkbox" defaultChecked className="rounded text-emerald-600" />
-                  Sentidos viales reales OSRM
+                <label className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 cursor-pointer">
+                  <input type="checkbox" defaultChecked className="rounded border-slate-300 text-blue-600" />
+                  Sentidos viales OSRM
                 </label>
               </div>
             </div>
 
             {/* Buttons */}
-            <div className="pt-4 flex items-center justify-end gap-2.5">
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer"
+                className="px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold flex items-center gap-2 shadow-lg shadow-emerald-600/30 cursor-pointer"
+                className="px-3.5 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium flex items-center gap-1.5 cursor-pointer shadow-none transition-colors"
               >
-                <Sparkles className="w-4 h-4" />
-                Ejecutar Optimización VRP
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Ejecutar VRP</span>
               </button>
             </div>
           </form>

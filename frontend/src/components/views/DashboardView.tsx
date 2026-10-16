@@ -2,7 +2,7 @@ import React from 'react';
 import { 
   Download, 
   Plus, 
-  Zap
+  Activity
 } from 'lucide-react';
 import { MetricCards } from '../dashboard/MetricCards';
 import { EfficiencyCharts } from '../dashboard/EfficiencyCharts';
@@ -21,47 +21,49 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onSelectRoute 
 }) => {
   return (
-    <div className="space-y-6 pb-12">
+    <div className="space-y-4 pb-10">
       
-      {/* Top Banner: Status & Quick Operations */}
-      <div className="p-6 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-slate-900 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-4">
-        
-        {/* Ambient decorative glow */}
-        <div className="absolute right-0 top-0 w-80 h-80 bg-white/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 max-w-xl">
-          <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-md text-[11px] font-semibold tracking-wide text-emerald-100 border border-white/20 mb-2">
-            <Zap className="w-3.5 h-3.5 text-amber-300" />
-            Flujo Operativo de Hoy Activo
+      {/* Top Operations Header */}
+      <div className="p-3.5 rounded-lg bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
+            <Activity className="w-4 h-4" />
           </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white leading-tight">
-            Torre de Control & Enrutamiento
-          </h2>
-          <p className="mt-1 text-xs sm:text-sm text-emerald-100/90 leading-relaxed">
-            18 vehículos despachados. La optimización combinatoria ha reducido <strong>384 km</strong> de recorrido hoy con 98.4% de puntualidad en ventanas de entrega.
-          </p>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+                Torre de Control Logística
+              </h2>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                Despacho Activo
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
+              18 vehículos en ruta · 384 km optimizados · 98.4% puntualidad
+            </p>
+          </div>
         </div>
 
-        {/* Quick action buttons on banner */}
-        <div className="relative z-10 flex flex-wrap items-center gap-2.5">
+        {/* Action group */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => alert('Generando informe ejecutivo en formato PDF...')}
+            className="px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/80 text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5 text-slate-400" />
+            <span>Exportar</span>
+          </button>
           <button
             type="button"
             onClick={onOpenNewRouteModal}
-            className="px-4 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 text-xs font-bold shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+            className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition-colors flex items-center gap-1.5 cursor-pointer shadow-none"
           >
-            <Plus className="w-4 h-4 text-emerald-600" />
-            Planificar Nueva Ruta
-          </button>
-          <button
-            type="button"
-            onClick={() => alert('Generando informe ejecutivo de rutas en formato PDF...')}
-            className="px-3.5 py-2.5 rounded-xl bg-black/20 hover:bg-black/30 border border-white/20 text-white text-xs font-semibold backdrop-blur-md transition-all flex items-center gap-2 cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            Exportar Reporte
+            <Plus className="w-3.5 h-3.5" />
+            <span>Nueva Ruta VRP</span>
           </button>
         </div>
-
       </div>
 
       {/* KPI Stats Cards */}

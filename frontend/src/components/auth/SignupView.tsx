@@ -78,96 +78,92 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-slate-50 dark:bg-[#070b13] text-slate-800 dark:text-slate-100 transition-colors duration-300 relative overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-slate-50 dark:bg-[#070b13] text-slate-800 dark:text-slate-100 transition-colors duration-200">
       
-      {/* Ambient background glows */}
-      <div className="absolute -top-32 -right-32 w-96 h-96 bg-teal-500/10 dark:bg-emerald-500/15 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-indigo-500/10 dark:bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-
       {/* Top right theme switcher */}
-      <div className="absolute top-6 right-6 z-20">
+      <div className="absolute top-4 right-4 z-20">
         <button
           onClick={toggleTheme}
           type="button"
           aria-label="Cambiar tema"
-          className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm hover:border-slate-300 dark:hover:border-slate-700 text-slate-600 dark:text-slate-300 transition-all flex items-center gap-2 text-sm font-medium"
+          className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors flex items-center gap-1.5 text-xs font-medium cursor-pointer"
         >
           {theme === 'dark' ? (
             <>
-              <Sun className="w-4 h-4 text-amber-400" />
-              <span className="hidden sm:inline text-xs">Modo Claro</span>
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Modo Claro</span>
             </>
           ) : (
             <>
-              <Moon className="w-4 h-4 text-indigo-500" />
-              <span className="hidden sm:inline text-xs">Modo Oscuro</span>
+              <Moon className="w-3.5 h-3.5 text-slate-600" />
+              <span className="hidden sm:inline">Modo Oscuro</span>
             </>
           )}
         </button>
       </div>
 
       {/* Left panel: Enterprise value proposition */}
-      <div className="hidden lg:flex lg:w-5/12 flex-col justify-between p-12 relative border-r border-slate-200/80 dark:border-slate-800/80 bg-gradient-to-br from-slate-100/70 via-slate-50 to-teal-50/20 dark:from-[#0b1220] dark:via-[#080d16] dark:to-[#08171f]">
+      <div className="hidden lg:flex lg:w-5/12 flex-col justify-between p-12 relative border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-[#090d16]">
         
         {/* Brand header */}
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-emerald-600 via-emerald-500 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/25 ring-2 ring-emerald-400/20">
-            <Truck className="w-6 h-6 text-white" />
+          <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
+            <Truck className="w-4 h-4" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-2xl font-bold tracking-tight bg-gradient-to-r from-slate-900 via-emerald-950 to-slate-800 dark:from-white dark:via-emerald-100 dark:to-slate-300 bg-clip-text text-transparent">
+              <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
                 RouteFlow
               </span>
-              <span className="px-2 py-0.5 text-[10px] uppercase font-bold tracking-wider rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                Prueba 14 Días
+              <span className="px-1.5 py-0.5 text-[10px] font-mono font-medium rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                14 Días Demo
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400">
               Enterprise Logistics Onboarding
             </p>
           </div>
         </div>
 
         {/* Benefits list */}
-        <div className="my-auto py-8 space-y-6">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5" />
-            Configuración en menos de 5 minutos
+        <div className="my-auto py-8 space-y-5">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-400 text-xs font-medium">
+            <Sparkles className="w-3 h-3" />
+            Configuración en 5 minutos
           </div>
 
-          <h1 className="text-3xl xl:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-            Comienza a ahorrar combustible y tiempo desde hoy.
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white leading-tight">
+            Optimiza combustible y tiempos desde el primer despacho.
           </h1>
 
-          <div className="space-y-4 pt-2">
+          <div className="space-y-3.5 pt-1">
             {[
               {
-                title: 'Motor de Optimización VRP Ilimitado',
-                desc: 'Calcula rutas combinatorias con cientos de paradas y restricciones complejas en segundos.',
+                title: 'Motor VRP Heurístico',
+                desc: 'Resuelve combinatorias de paradas con restricciones de tiempo en segundos.',
               },
               {
-                title: 'Matriz de Distancias y Tiempos Reales',
-                desc: 'Enrutamiento basado en OSRM considerando sentidos viales y restricciones de giro urbano.',
+                title: 'Matriz Vial OSRM',
+                desc: 'Tiempos y distancias reales considerando sentidos de giro y vías urbanas.',
               },
               {
-                title: 'Balanceo de Carga por Peso y Volumen',
-                desc: 'Reparte pedidos según la capacidad máxima en kg y m³ de cada furgoneta o camión.',
+                title: 'Balanceo por Capacidad',
+                desc: 'Distribuye pedidos respetando el tonelaje y volumen cúbico por vehículo.',
               },
               {
-                title: 'Panel Multi-tenant y API Abierta',
-                desc: 'Integra con tus sistemas ERP (SAP, Siigo, Odoo) o importa entregas mediante hojas CSV/Excel.',
+                title: 'Arquitectura Multi-tenant',
+                desc: 'Aislamiento estricto de datos con soporte para importación masiva CSV.',
               },
             ].map((item, idx) => (
-              <div key={idx} className="flex items-start gap-3">
-                <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Check className="w-3 h-3 stroke-[3]" />
+              <div key={idx} className="flex items-start gap-2.5">
+                <div className="w-4 h-4 rounded text-blue-600 dark:text-blue-400 bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-0.5 border border-blue-500/20">
+                  <Check className="w-2.5 h-2.5 stroke-[3]" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  <h4 className="text-xs font-semibold text-slate-900 dark:text-white">
                     {item.title}
                   </h4>
-                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
                     {item.desc}
                   </p>
                 </div>
@@ -175,17 +171,17 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
             ))}
           </div>
 
-          <div className="p-4 rounded-xl bg-slate-900/5 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800">
+          <div className="p-3.5 rounded-xl surface-card border border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-600 font-bold text-sm">
+              <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center font-mono font-bold text-xs text-slate-900 dark:text-white">
                 99%
               </div>
               <div>
                 <p className="text-xs font-semibold text-slate-900 dark:text-white">
-                  Satisfacción en Cumplimiento de Entregas
+                  Cumplimiento de Ventanas de Entrega
                 </p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Más de 120,000 km optimizados mensualmente en Colombia y Latinoamérica.
+                  Más de 120,000 km calculados y optimizados mensualmente.
                 </p>
               </div>
             </div>
@@ -193,10 +189,10 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-4 border-t border-slate-200/60 dark:border-slate-800/60">
+        <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-4 border-t border-slate-100 dark:border-slate-800">
           <span>Sin tarjeta de crédito requerida</span>
           <span className="flex items-center gap-1">
-            <ShieldCheck className="w-4 h-4 text-emerald-500" /> Cumplimiento SOC2 & GDPR
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Cumplimiento SOC2 & TLS 1.3
           </span>
         </div>
       </div>
@@ -205,48 +201,48 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
       <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-12 overflow-y-auto z-10">
         
         {/* Mobile branding */}
-        <div className="flex lg:hidden items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/25">
-            <Truck className="w-5 h-5 text-white" />
+        <div className="flex lg:hidden items-center gap-2.5 mb-6">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
+            <Truck className="w-4 h-4" />
           </div>
-          <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
             RouteFlow
           </span>
         </div>
 
-        <div className="w-full max-w-lg py-4">
-          <div className="mb-6">
-            <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+        <div className="w-full max-w-md py-4">
+          <div className="mb-5">
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
               Crea tu cuenta corporativa
             </h2>
-            <p className="mt-1.5 text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-              Comienza tu prueba gratuita de 14 días. Sin contratos forzosos.
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Prueba gratuita de 14 días. Sin contratos de permanencia.
             </p>
           </div>
 
           {/* Error banner */}
           {errorMessage && (
-            <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center justify-between">
+            <div className="mb-4 p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs font-medium flex items-center justify-between">
               <span>{errorMessage}</span>
               <button
                 type="button"
                 onClick={() => setErrorMessage(null)}
-                className="text-rose-400 hover:text-rose-600 font-bold ml-2"
+                className="text-rose-400 hover:text-rose-600 font-bold ml-2 cursor-pointer"
               >
                 ✕
               </button>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                   Nombre Completo
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <User className="w-4 h-4" />
                   </div>
                   <input
@@ -255,17 +251,17 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                     placeholder="Carlos Restrepo"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 text-sm font-medium"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                   Correo Corporativo
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <Mail className="w-4 h-4" />
                   </div>
                   <input
@@ -274,19 +270,19 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="carlos@empresa.com"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 text-sm font-medium"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
                   />
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                   Empresa o Marca
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <Building2 className="w-4 h-4" />
                   </div>
                   <input
@@ -295,36 +291,36 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
                     value={formData.companyName}
                     onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
                     placeholder="Logística Andina S.A.S"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 text-sm font-medium"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+                <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                   Tamaño de Flota
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                     <Layers className="w-4 h-4" />
                   </div>
                   <select
                     value={formData.fleetSize}
                     onChange={(e) => setFormData({ ...formData, fleetSize: e.target.value })}
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 text-sm font-medium"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs font-mono"
                   >
                     <option value="1-5">1 - 5 Vehículos</option>
                     <option value="6-25">6 - 25 Vehículos</option>
                     <option value="26-100">26 - 100 Vehículos</option>
-                    <option value="100+">Más de 100 Vehículos (Enterprise)</option>
+                    <option value="100+">Más de 100 (Enterprise)</option>
                   </select>
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
-                Rol Principal en la Operación
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+                Rol Principal
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {[
@@ -336,10 +332,10 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
                     key={roleOption.value}
                     type="button"
                     onClick={() => setFormData({ ...formData, role: roleOption.value })}
-                    className={`py-2 px-2 text-xs rounded-xl border font-medium text-center transition-all cursor-pointer ${
+                    className={`py-1.5 px-2 text-xs rounded-lg border font-medium text-center transition-colors cursor-pointer ${
                       formData.role === roleOption.value
-                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold'
-                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 hover:border-slate-300'
+                        ? 'border-blue-600 bg-blue-50/40 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 font-semibold'
+                        : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700'
                     }`}
                   >
                     {roleOption.label}
@@ -349,11 +345,11 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 mb-1.5">
+              <label className="block text-[11px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                 Contraseña
               </label>
               <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
@@ -361,13 +357,13 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
                   required
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Mínimo 8 caracteres seguros"
-                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/40 focus:border-emerald-500 text-sm font-medium"
+                  placeholder="Mínimo 8 caracteres"
+                  className="w-full pl-9 pr-9 py-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-xs font-mono"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -375,8 +371,8 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
 
               {/* Password strength indicator */}
               {formData.password && (
-                <div className="mt-2 flex items-center gap-1.5">
-                  <div className="flex-1 grid grid-cols-4 gap-1 h-1.5">
+                <div className="mt-1.5 flex items-center gap-1.5">
+                  <div className="flex-1 grid grid-cols-4 gap-1 h-1">
                     {[1, 2, 3, 4].map((step) => (
                       <div
                         key={step}
@@ -390,24 +386,24 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
                       />
                     ))}
                   </div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                  <span className="text-[10px] text-slate-400 font-medium">
                     {strength <= 1 ? 'Débil' : strength <= 3 ? 'Aceptable' : 'Robusta'}
                   </span>
                 </div>
               )}
             </div>
 
-            <div className="pt-1">
-              <label className="flex items-start gap-2.5 cursor-pointer">
+            <div className="pt-0.5">
+              <label className="flex items-start gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   required
                   checked={formData.acceptTerms}
                   onChange={(e) => setFormData({ ...formData, acceptTerms: e.target.checked })}
-                  className="mt-0.5 w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-emerald-600 focus:ring-emerald-500 dark:bg-slate-900"
+                  className="mt-0.5 w-3.5 h-3.5 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 dark:bg-slate-900"
                 />
-                <span className="text-xs text-slate-600 dark:text-slate-400 leading-normal">
-                  Acepto los Términos de Servicio de RouteFlow SaaS, la Política de Privacidad de datos telemáticos y el acuerdo de procesamiento de rutas.
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-normal">
+                  Acepto los Términos de Servicio de RouteFlow SaaS y la Política de Procesamiento de Rutas.
                 </span>
               </label>
             </div>
@@ -415,27 +411,27 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3 px-4 rounded-xl font-semibold text-sm bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-600 text-white shadow-lg shadow-emerald-600/25 hover:shadow-emerald-600/35 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 mt-2"
+              className="w-full py-2.5 px-4 rounded-lg font-medium text-xs bg-blue-600 hover:bg-blue-500 text-white shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-70 mt-1"
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  Crear Cuenta & Empezar Prueba Gratuita
-                  <ArrowRight className="w-4 h-4" />
+                  Crear Cuenta & Iniciar Prueba
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
             </button>
           </form>
 
           {/* Switch to Login */}
-          <div className="mt-6 text-center">
-            <p className="text-xs text-slate-600 dark:text-slate-400">
-              ¿Tu empresa ya tiene una cuenta activa?{' '}
+          <div className="mt-5 text-center">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              ¿Tu empresa ya tiene cuenta activa?{' '}
               <button
                 type="button"
                 onClick={onNavigateToLogin}
-                className="font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 hover:underline cursor-pointer"
+                className="font-medium text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
               >
                 Inicia sesión aquí
               </button>
