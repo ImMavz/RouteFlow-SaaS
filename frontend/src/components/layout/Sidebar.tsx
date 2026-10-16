@@ -15,6 +15,7 @@ import {
   Cpu
 } from 'lucide-react';
 import type { AppView, User } from '../../types';
+import { RouteFlowLogo } from '../common/RouteFlowLogo';
 
 interface SidebarProps {
   currentView: AppView;
@@ -123,9 +124,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="flex items-center gap-2.5 overflow-hidden cursor-pointer" 
             onClick={() => handleSelect('dashboard')}
           >
-            <div className="w-7 h-7 rounded bg-slate-900 dark:bg-white text-white dark:text-slate-900 flex items-center justify-center font-bold text-xs flex-shrink-0">
-              <Truck className="w-4 h-4 stroke-[2]" />
-            </div>
+            <RouteFlowLogo className="w-7 h-7" />
             {!collapsed && (
               <div className="flex items-center gap-2 truncate">
                 <span className="font-semibold text-sm tracking-tight text-slate-900 dark:text-white">

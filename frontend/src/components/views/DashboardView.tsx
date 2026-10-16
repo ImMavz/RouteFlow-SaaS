@@ -1,8 +1,7 @@
 import React from 'react';
 import { 
   Download, 
-  Plus, 
-  Activity
+  Plus 
 } from 'lucide-react';
 import { MetricCards } from '../dashboard/MetricCards';
 import { EfficiencyCharts } from '../dashboard/EfficiencyCharts';
@@ -10,6 +9,7 @@ import { RouteMapPreview } from '../dashboard/RouteMapPreview';
 import { LiveRoutesTable } from '../dashboard/LiveRoutesTable';
 import { mockKPIs } from '../../data/mockData';
 import type { DeliveryRoute } from '../../types';
+import { RouteFlowLogo } from '../common/RouteFlowLogo';
 
 interface DashboardViewProps {
   onOpenNewRouteModal: () => void;
@@ -26,9 +26,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Top Operations Header */}
       <div className="p-3.5 rounded-lg bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
-            <Activity className="w-4 h-4" />
-          </div>
+          <RouteFlowLogo className="w-8 h-8" />
           <div>
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold text-slate-900 dark:text-white">

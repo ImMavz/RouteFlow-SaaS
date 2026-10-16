@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { 
-  Truck, 
   Lock, 
   Mail, 
   ArrowRight, 
@@ -15,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { loginApi } from '../../api/auth';
+import { RouteFlowLogo } from '../common/RouteFlowLogo';
 
 interface LoginViewProps {
   onLoginSuccess: (user?: any) => void;
@@ -89,9 +89,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigate
         
         {/* Brand header */}
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
-            <Truck className="w-4 h-4" />
-          </div>
+          <RouteFlowLogo className="w-9 h-9" />
           <div>
             <div className="flex items-center gap-2">
               <span className="text-base font-bold tracking-tight text-slate-900 dark:text-white">
@@ -178,9 +176,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigate
         
         {/* Mobile branding */}
         <div className="flex lg:hidden items-center gap-2.5 mb-6">
-          <div className="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center font-bold">
-            <Truck className="w-4 h-4" />
-          </div>
+          <RouteFlowLogo className="w-8 h-8" />
           <span className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">
             RouteFlow
           </span>

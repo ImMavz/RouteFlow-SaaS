@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import type { AppView } from '../../types';
+import { RouteFlowLogo } from '../common/RouteFlowLogo';
 
 interface TopNavbarProps {
   currentView: AppView;
@@ -84,6 +85,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
 
         <div className="min-w-0">
           <div className="flex items-center gap-2">
+            <RouteFlowLogo className="w-5 h-5 lg:hidden" />
             <h1 className="text-sm font-semibold text-slate-900 dark:text-white truncate">
               {viewTitles[currentView]?.title || 'RouteFlow'}
             </h1>
