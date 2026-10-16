@@ -16,25 +16,35 @@ import {
   Layers
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { registerApi } from '../../api/auth';
 
 interface SignupViewProps {
-  onSignupSuccess: () => void;
+  onSignupSuccess: (user?: any) => void;
   onNavigateToLogin: () => void;
 }
 
 export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavigateToLogin }) => {
   const { theme, toggleTheme } = useTheme();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    fullName: string;
+    email: string;
+    companyName: string;
+    fleetSize: string;
+    role: 'admin' | 'dispatcher' | 'driver';
+    password: string;
+    acceptTerms: boolean;
+  }>({
     fullName: '',
     email: '',
     companyName: '',
     fleetSize: '6-25',
-    role: 'Planificador Logístico',
+    role: 'admin',
     password: '',
     acceptTerms: true,
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const calculatePasswordStrength = (pass: string) => {
     let score = 0;
@@ -47,13 +57,24 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
 
   const strength = calculatePasswordStrength(formData.password);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+    setErrorMessage(null);
+    try {
+      const res = await registerApi({
+        fullName: formData.fullName,
+        email: formData.email,
+        companyName: formData.companyName,
+        role: formData.role,
+        password: formData.password,
+      });
+      onSignupSuccess(res.user);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error al registrar la empresa y usuario');
+    } finally {
       setIsLoading(false);
-      onSignupSuccess();
-    }, 600);
+    }
   };
 
   return (
@@ -203,6 +224,20 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
             </p>
           </div>
 
+          {/* Error banner */}
+          {errorMessage && (
+            <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center justify-between">
+              <span>{errorMessage}</span>
+              <button
+                type="button"
+                onClick={() => setErrorMessage(null)}
+                className="text-rose-400 hover:text-rose-600 font-bold ml-2"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -293,21 +328,21 @@ export const SignupView: React.FC<SignupViewProps> = ({ onSignupSuccess, onNavig
               </label>
               <div className="grid grid-cols-3 gap-2">
                 {[
-                  'Planificador Logístico',
-                  'Gerente de Flota',
-                  'Despachador / Ops',
+                  { value: 'admin' as const, label: 'Administrador' },
+                  { value: 'dispatcher' as const, label: 'Despachador' },
+                  { value: 'driver' as const, label: 'Conductor' },
                 ].map((roleOption) => (
                   <button
-                    key={roleOption}
+                    key={roleOption.value}
                     type="button"
-                    onClick={() => setFormData({ ...formData, role: roleOption })}
+                    onClick={() => setFormData({ ...formData, role: roleOption.value })}
                     className={`py-2 px-2 text-xs rounded-xl border font-medium text-center transition-all cursor-pointer ${
-                      formData.role === roleOption
+                      formData.role === roleOption.value
                         ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold'
                         : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 text-slate-600 dark:text-slate-400 hover:border-slate-300'
                     }`}
                   >
-                    {roleOption}
+                    {roleOption.label}
                   </button>
                 ))}
               </div>

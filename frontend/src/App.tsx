@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ThemeProvider } from './context/ThemeContext';
 import { LoginView } from './components/auth/LoginView';
 import { SignupView } from './components/auth/SignupView';
@@ -14,7 +14,8 @@ import { OsrmLabView } from './components/views/OsrmLabView';
 import { RouteMapPreview } from './components/dashboard/RouteMapPreview';
 import { NewRouteModal } from './components/dashboard/NewRouteModal';
 import { mockCurrentUser } from './data/mockData';
-import type { AppView, DeliveryRoute } from './types';
+import { authStorage, type BackendAuthUser } from './api/auth';
+import type { AppView, DeliveryRoute, User } from './types';
 import { Layers } from 'lucide-react';
 
 const AppContent: React.FC = () => {
@@ -22,17 +23,51 @@ const AppContent: React.FC = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isNewRouteModalOpen, setIsNewRouteModalOpen] = useState(false);
-  const [user] = useState(mockCurrentUser);
+  const [user, setUser] = useState<User>(mockCurrentUser);
 
-  const handleLoginSuccess = () => {
+  useEffect(() => {
+    const token = authStorage.getToken();
+    const stored = authStorage.getUser();
+    if (token && stored) {
+      setUser((prev) => ({
+        ...prev,
+        id: stored.id,
+        name: stored.fullName || prev.name,
+        email: stored.email || prev.email,
+        company: stored.companyId || prev.company,
+      }));
+      setCurrentView('dashboard');
+    }
+  }, []);
+
+  const handleLoginSuccess = (authUser?: BackendAuthUser) => {
+    if (authUser) {
+      setUser((prev) => ({
+        ...prev,
+        id: authUser.id,
+        name: authUser.fullName,
+        email: authUser.email,
+        company: authUser.companyId,
+      }));
+    }
     setCurrentView('dashboard');
   };
 
-  const handleSignupSuccess = () => {
+  const handleSignupSuccess = (authUser?: BackendAuthUser) => {
+    if (authUser) {
+      setUser((prev) => ({
+        ...prev,
+        id: authUser.id,
+        name: authUser.fullName,
+        email: authUser.email,
+        company: authUser.companyId,
+      }));
+    }
     setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
+    authStorage.clearSession();
     setCurrentView('login');
   };
 

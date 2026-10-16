@@ -14,7 +14,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: 'Administrador' | 'Planificador Logístico' | 'Gerente de Flota' | 'Conductor';
+  role: 'Administrador' | 'Planificador Logístico' | 'Gerente de Flota' | 'Conductor' | 'admin' | 'dispatcher' | 'driver';
   company: string;
   avatarUrl?: string;
 }

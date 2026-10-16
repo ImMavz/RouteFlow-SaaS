@@ -14,37 +14,49 @@ import {
   Zap
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { loginApi } from '../../api/auth';
 
 interface LoginViewProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (user?: any) => void;
   onNavigateToSignup: () => void;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigateToSignup }) => {
   const { theme, toggleTheme } = useTheme();
-  const [email, setEmail] = useState('j.herrera@routeflow.io');
-  const [password, setPassword] = useState('••••••••••••');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
+    setErrorMessage(null);
+    try {
+      const res = await loginApi(email, password);
+      onLoginSuccess(res.user);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error al iniciar sesión');
+    } finally {
       setIsLoading(false);
-      onLoginSuccess();
-    }, 600);
+    }
   };
 
-  const handleDemoLogin = () => {
-    setEmail('j.herrera@routeflow.io');
+  const handleDemoLogin = async () => {
+    setEmail('admin@routeflow.com');
     setPassword('RouteFlow2026!');
     setIsLoading(true);
-    setTimeout(() => {
+    setErrorMessage(null);
+    try {
+      const res = await loginApi('admin@routeflow.com', 'RouteFlow2026!');
+      onLoginSuccess(res.user);
+    } catch (err: any) {
+      setErrorMessage('Usuario demo aún no existe en DB. Regístrate o crea el usuario.');
+    } finally {
       setIsLoading(false);
-      onLoginSuccess();
-    }, 450);
+    }
   };
 
   return (
@@ -216,6 +228,20 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigate
               Demo ⚡
             </button>
           </div>
+
+          {/* Error banner */}
+          {errorMessage && (
+            <div className="mb-4 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-xs font-semibold flex items-center justify-between">
+              <span>{errorMessage}</span>
+              <button
+                type="button"
+                onClick={() => setErrorMessage(null)}
+                className="text-rose-400 hover:text-rose-600 font-bold ml-2"
+              >
+                ✕
+              </button>
+            </div>
+          )}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
