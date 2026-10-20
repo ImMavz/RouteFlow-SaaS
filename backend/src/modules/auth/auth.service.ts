@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { User } from '../users/entities/user.entity.js';
 import { Company } from '../companies/entities/company.entity.js';
 import { MultiTenantHashService } from './services/multitenant-hash.service.js';
+import { RlsService } from '../../database/rls.service.js';
 import type { LoginDto, AuthResponseDto } from './dto/login.dto.js';
 import type { RegisterDto } from './dto/register.dto.js';
 import type { JwtPayload } from './strategies/jwt.strategy.js';
@@ -22,13 +23,16 @@ export class AuthService {
     private readonly companyRepository: Repository<Company>,
     private readonly hashService: MultiTenantHashService,
     private readonly jwtService: JwtService,
+    private readonly rlsService: RlsService,
   ) {}
 
   async validateUser(email: string, pass: string): Promise<User | null> {
     const normalizedEmail = email.toLowerCase().trim();
-    const user = await this.userRepository.findOne({
-      where: { email: normalizedEmail },
-    });
+    const user = await this.rlsService.runWithBypass((manager) =>
+      manager.findOne(User, {
+        where: { email: normalizedEmail },
+      }),
+    );
 
     if (!user || !user.isActive) {
       return null;
@@ -70,57 +74,60 @@ export class AuthService {
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
     const normalizedEmail = dto.email.toLowerCase().trim();
-    const existing = await this.userRepository.findOne({
-      where: { email: normalizedEmail },
-    });
 
-    if (existing) {
-      throw new ConflictException('El correo ya está registrado');
-    }
-
-    let companyId = dto.companyId;
-    if (!companyId) {
-      const company = this.companyRepository.create({
-        name: dto.companyName?.trim() || 'Mi Empresa',
+    return this.rlsService.runWithBypass(async (manager) => {
+      const existing = await manager.findOne(User, {
+        where: { email: normalizedEmail },
       });
-      const savedCompany = await this.companyRepository.save(company);
-      companyId = savedCompany.id;
-    }
 
-    const passwordHash = await this.hashService.hashPassword(
-      dto.password,
-      companyId,
-    );
+      if (existing) {
+        throw new ConflictException('El correo ya está registrado');
+      }
 
-    const user = this.userRepository.create({
-      companyId,
-      email: normalizedEmail,
-      passwordHash,
-      fullName: dto.fullName.trim(),
-      phone: dto.phone?.trim(),
-      role: dto.role ?? (dto.companyId ? 'dispatcher' : 'admin'),
-      isActive: true,
-    });
+      let companyId = dto.companyId;
+      if (!companyId) {
+        const company = manager.create(Company, {
+          name: dto.companyName?.trim() || 'Mi Empresa',
+        });
+        const savedCompany = await manager.save(company);
+        companyId = savedCompany.id;
+      }
 
-    const saved = await this.userRepository.save(user);
+      const passwordHash = await this.hashService.hashPassword(
+        dto.password,
+        companyId,
+      );
 
-    const payload: JwtPayload = {
-      sub: saved.id,
-      email: saved.email,
-      companyId: saved.companyId,
-      role: saved.role,
-    };
+      const user = manager.create(User, {
+        companyId,
+        email: normalizedEmail,
+        passwordHash,
+        fullName: dto.fullName.trim(),
+        phone: dto.phone?.trim(),
+        role: dto.role ?? (dto.companyId ? 'dispatcher' : 'admin'),
+        isActive: true,
+      });
 
-    return {
-      accessToken: this.jwtService.sign(payload),
-      user: {
-        id: saved.id,
+      const saved = await manager.save(user);
+
+      const payload: JwtPayload = {
+        sub: saved.id,
         email: saved.email,
-        fullName: saved.fullName,
-        role: saved.role,
         companyId: saved.companyId,
-      },
-    };
+        role: saved.role,
+      };
+
+      return {
+        accessToken: this.jwtService.sign(payload),
+        user: {
+          id: saved.id,
+          email: saved.email,
+          fullName: saved.fullName,
+          role: saved.role,
+          companyId: saved.companyId,
+        },
+      };
+    });
   }
 }
 

@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { UnauthorizedException, ConflictException } from '@nestjs/common';
 import { AuthService } from './auth.service.js';
-import type { User } from '../users/entities/user.entity.js';
+import { User } from '../users/entities/user.entity.js';
+import { Company } from '../companies/entities/company.entity.js';
 
 describe('AuthService', () => {
   let authService: AuthService;
@@ -9,6 +10,8 @@ describe('AuthService', () => {
   let mockCompanyRepo: any;
   let mockHashService: any;
   let mockJwtService: any;
+  let mockRlsService: any;
+  let mockEntityManager: any;
 
   const mockUser: User = {
     id: 'user-uuid-1',
@@ -43,11 +46,33 @@ describe('AuthService', () => {
       sign: vi.fn().mockReturnValue('mock.jwt.token'),
     };
 
+    mockEntityManager = {
+      findOne: vi.fn().mockImplementation((_entityClass: any, options: any) => mockUserRepo.findOne(options)),
+      create: vi.fn().mockImplementation((entityClass: any, data: any) => {
+        if (entityClass === User) {
+          return mockUserRepo.create(data);
+        }
+        return mockCompanyRepo.create(data);
+      }),
+      save: vi.fn().mockImplementation((entity: any) => {
+        if (entity.email !== undefined) {
+          return mockUserRepo.save(entity);
+        }
+        return mockCompanyRepo.save(entity);
+      }),
+    };
+
+    mockRlsService = {
+      runWithBypass: vi.fn().mockImplementation((fn: any) => fn(mockEntityManager)),
+      runWithTenant: vi.fn().mockImplementation((_cid: any, fn: any) => fn(mockEntityManager)),
+    };
+
     authService = new AuthService(
       mockUserRepo,
       mockCompanyRepo,
       mockHashService,
       mockJwtService,
+      mockRlsService,
     );
   });
 

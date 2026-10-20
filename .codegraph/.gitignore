@@ -3,3 +3,6 @@
 # files (the database, daemon.pid, sockets, logs) never show up in git.
 *
 !.gitignore
+!hide-cmd.cjs
+!hide-cmd.cjs
+

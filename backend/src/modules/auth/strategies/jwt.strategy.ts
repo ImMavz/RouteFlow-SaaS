@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../users/entities/user.entity.js';
+import { RlsService } from '../../../database/rls.service.js';
 
 export interface JwtPayload {
   sub: string;
@@ -26,6 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     configService: ConfigService,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly rlsService: RlsService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -35,9 +37,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
-    const user = await this.userRepository.findOne({
-      where: { id: payload.sub, companyId: payload.companyId, isActive: true },
-    });
+    const user = await this.rlsService.runWithTenant(payload.companyId, (manager) =>
+      manager.findOne(User, {
+        where: { id: payload.sub, companyId: payload.companyId, isActive: true },
+      }),
+    );
 
     if (!user) {
       throw new UnauthorizedException('Token inválido o usuario inactivo');

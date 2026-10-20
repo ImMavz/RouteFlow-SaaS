@@ -78,3 +78,29 @@ export interface DeliveryStop {
   status: 'completada' | 'en_progreso' | 'pendiente' | 'fallida';
   coordinates: [number, number]; // [lat, lng]
 }
+
+export interface Warehouse {
+  id: string;
+  companyId: string;
+  name: string;
+  address: string;
+  lat: number;
+  lng: number;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type BackendVehicleStatus = 'active' | 'maintenance' | 'inactive';
+
+export interface VehicleRecord {
+  id: string;
+  companyId: string;
+  plate: string;
+  name?: string;
+  capacityKg: number;
+  status: BackendVehicleStatus;
+  driverId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}

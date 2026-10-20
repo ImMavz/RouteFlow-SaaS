@@ -14,16 +14,19 @@ export interface BackendAuthResponse {
 }
 
 export const authStorage = {
-  getToken: (): string | null => localStorage.getItem('routeflow_token'),
+  getToken: (): string | null =>
+    localStorage.getItem('rf_auth_token') || localStorage.getItem('routeflow_token'),
   getUser: (): BackendAuthUser | null => {
     const raw = localStorage.getItem('routeflow_user');
     return raw ? JSON.parse(raw) : null;
   },
   saveSession: (data: BackendAuthResponse) => {
+    localStorage.setItem('rf_auth_token', data.accessToken);
     localStorage.setItem('routeflow_token', data.accessToken);
     localStorage.setItem('routeflow_user', JSON.stringify(data.user));
   },
   clearSession: () => {
+    localStorage.removeItem('rf_auth_token');
     localStorage.removeItem('routeflow_token');
     localStorage.removeItem('routeflow_user');
   },
@@ -83,4 +86,3 @@ export async function fetchProfileApi(): Promise<any> {
 
   return response.json();
 }
-

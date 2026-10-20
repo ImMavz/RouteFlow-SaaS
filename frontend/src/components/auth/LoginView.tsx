@@ -13,7 +13,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
-import { loginApi } from '../../api/auth';
+import { authApi } from '../../services/api';
 import { RouteFlowLogo } from '../common/RouteFlowLogo';
 
 interface LoginViewProps {
@@ -35,7 +35,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigate
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const res = await loginApi(email, password);
+      const res = await authApi.login({ email, password });
       onLoginSuccess(res.user);
     } catch (err: any) {
       setErrorMessage(err.message || 'Error al iniciar sesión');
@@ -50,7 +50,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess, onNavigate
     setIsLoading(true);
     setErrorMessage(null);
     try {
-      const res = await loginApi('admin@routeflow.com', 'RouteFlow2026!');
+      const res = await authApi.login({ email: 'admin@routeflow.com', password: 'RouteFlow2026!' });
       onLoginSuccess(res.user);
     } catch (err: any) {
       setErrorMessage('Usuario demo aún no existe en DB. Regístrate o crea el usuario.');

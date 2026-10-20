@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs';
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DatabaseHealthController } from './database-health.controller.js';
+import { RlsService } from './rls.service.js';
 
+@Global()
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
@@ -34,5 +36,7 @@ import { DatabaseHealthController } from './database-health.controller.js';
     }),
   ],
   controllers: [DatabaseHealthController],
+  providers: [RlsService],
+  exports: [RlsService],
 })
 export class DatabaseModule {}
