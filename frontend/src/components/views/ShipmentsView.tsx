@@ -15,9 +15,11 @@ import {
   Layers,
   Phone,
   Compass,
+  Printer,
 } from 'lucide-react';
 import { deliveriesApi, warehousesApi } from '../../services/api';
 import { CreateDeliveryModal } from '../deliveries/CreateDeliveryModal';
+import { generateRouteManifestPdf, type RouteManifestData } from '../../services/manifestPdf.service';
 import type { DeliveryRecord, DeliveryRecordStatus, Warehouse } from '../../types';
 
 export const ShipmentsView: React.FC = () => {
@@ -150,6 +152,54 @@ export const ShipmentsView: React.FC = () => {
   const handleDeliveryCreated = (newDelivery: DeliveryRecord) => {
     setSuccessBanner(`Orden manual para "${newDelivery.customerName}" registrada exitosamente.`);
     loadDeliveries();
+  };
+
+  // Export active shipments view to PDF manifest
+  const handleExportDayManifest = async () => {
+    if (deliveries.length === 0) return;
+    try {
+      const userStr = localStorage.getItem('routeflow_user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      const companyName = user?.companyName || user?.company || 'RouteFlow Logistics';
+
+      const manifestData: RouteManifestData = {
+        manifestNumber: `MNF-${(filterAllDates ? todayStr : deliveryDate).replace(/-/g, '')}-GEN`,
+        routeDate: filterAllDates ? todayStr : deliveryDate,
+        companyName,
+        warehouseName: warehouses[0]?.name || 'Hub Central de Despacho',
+        warehouseAddress: warehouses[0]?.address || 'Sede de Operaciones',
+        vehiclePlate: 'FLOTA GENERAL',
+        vehicleName: 'Consolidado de Despacho',
+        vehicleCapacityKg: Math.max(totalWeightKg, 1500),
+        driverName: 'Conductor por Asignar',
+        totalDistanceKm: 0,
+        totalDurationMin: Math.round(
+          deliveries.reduce((acc, d) => acc + (d.serviceTimeSeconds || 300), 0) / 60,
+        ),
+        totalLoadKg: totalWeightKg,
+        stops: deliveries.map((d, idx) => ({
+          sequence: idx + 1,
+          externalRef: d.externalRef || undefined,
+          customerName: d.customerName,
+          customerPhone: d.phone || undefined,
+          address: d.address,
+          notes: d.notes || undefined,
+          timeWindow:
+            d.windowStart && d.windowEnd
+              ? `${d.windowStart.slice(0, 5)} - ${d.windowEnd.slice(0, 5)}`
+              : 'Todo el día',
+          weightKg: Number(d.weightKg) || 0,
+          status: d.status,
+        })),
+      };
+
+      await generateRouteManifestPdf(manifestData);
+      setSuccessBanner(
+        `Manifiesto de Despacho generado exitosamente con ${deliveries.length} entregas. Descarga iniciada.`,
+      );
+    } catch (err: any) {
+      setErrorBanner(err.message || 'Error al exportar manifiesto PDF.');
+    }
   };
 
   // Calculated metrics
@@ -294,6 +344,17 @@ export const ShipmentsView: React.FC = () => {
           >
             <FileSpreadsheet className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
             <span>{isUploadingCsv ? 'Procesando...' : 'Importar CSV'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExportDayManifest}
+            disabled={deliveries.length === 0}
+            className="px-3.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-medium text-xs flex items-center gap-1.5 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
+            title="Descargar Manifiesto y Hoja de Ruta en PDF"
+          >
+            <Printer className="w-3.5 h-3.5 text-blue-500" />
+            <span>Manifiesto PDF</span>
           </button>
 
           <button

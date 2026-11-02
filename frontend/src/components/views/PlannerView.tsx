@@ -16,6 +16,8 @@ import {
   Boxes,
   Trash2,
   Plus,
+  FileText,
+  Printer,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -30,6 +32,7 @@ import {
 } from '../../services/api';
 import { fetchRouteStreetGeometry, calculateDistanceKm } from '../../services/osrm';
 import { CreateDeliveryModal } from '../deliveries/CreateDeliveryModal';
+import { generateRouteManifestPdf, type RouteManifestData } from '../../services/manifestPdf.service';
 import type {
   Warehouse,
   VehicleRecord,
@@ -451,6 +454,70 @@ export const PlannerView: React.FC<PlannerViewProps> = ({ onNavigate }) => {
       setErrorBanner(err.message || 'Error al eliminar la ruta.');
     } finally {
       setIsDeletingRouteId(null);
+    }
+  };
+
+  // Export single route manifest to PDF
+  const handleExportManifestPdf = async (route: BackendRoute, index: number) => {
+    try {
+      const userStr = localStorage.getItem('routeflow_user');
+      const user = userStr ? JSON.parse(userStr) : null;
+      const companyName = user?.companyName || user?.company || 'RouteFlow Logistics';
+
+      const sortedStops = [...(route.stops || [])].sort(
+        (a, b) => (a.sequence ?? 0) - (b.sequence ?? 0),
+      );
+
+      const manifestData: RouteManifestData = {
+        manifestNumber: `MNF-${route.routeDate?.replace(/-/g, '') || todayStr.replace(/-/g, '')}-${(index + 1).toString().padStart(2, '0')}`,
+        routeDate: route.routeDate || deliveryDate,
+        companyName,
+        warehouseName: selectedWarehouse?.name || 'Bodega Principal',
+        warehouseAddress: selectedWarehouse?.address || 'Centro Logístico',
+        vehiclePlate: route.vehicle?.plate || `Vehículo ${index + 1}`,
+        vehicleName: route.vehicle?.name || 'Camión de Carga',
+        vehicleCapacityKg: Number(route.vehicle?.capacityKg) || 1000,
+        driverName: route.driver?.fullName || 'Conductor por Asignar',
+        totalDistanceKm:
+          route.totalDistanceKm ??
+          (route.totalDistanceMeters ? Number((route.totalDistanceMeters / 1000).toFixed(1)) : 0),
+        totalDurationMin:
+          route.totalDurationMin ??
+          (route.totalDurationSeconds ? Math.round(route.totalDurationSeconds / 60) : 0),
+        totalLoadKg: Number(route.totalLoadKg) || 0,
+        stops: sortedStops.map((stop, sIdx) => ({
+          sequence: stop.sequence ?? sIdx + 1,
+          externalRef: stop.delivery?.externalRef || undefined,
+          customerName: stop.delivery?.customerName || `Parada #${stop.sequence ?? sIdx + 1}`,
+          customerPhone: stop.delivery?.phone || undefined,
+          address: stop.delivery?.address || 'Dirección de Entrega',
+          notes: stop.delivery?.notes || undefined,
+          timeWindow:
+            stop.delivery?.windowStart && stop.delivery?.windowEnd
+              ? `${stop.delivery.windowStart.slice(0, 5)} - ${stop.delivery.windowEnd.slice(0, 5)}`
+              : 'Todo el día',
+          weightKg: Number(stop.delivery?.weightKg) || 0,
+        })),
+      };
+
+      await generateRouteManifestPdf(manifestData);
+      setSuccessBanner(
+        `Manifiesto PDF para ${manifestData.vehiclePlate} generado exitosamente. Descarga iniciada.`,
+      );
+    } catch (err: any) {
+      setErrorBanner(err.message || 'Error al generar el manifiesto PDF.');
+    }
+  };
+
+  // Export all routes manifests to PDF sequentially
+  const handleExportAllManifests = async () => {
+    if (calculatedRoutes.length === 0) return;
+    try {
+      for (let i = 0; i < calculatedRoutes.length; i++) {
+        await handleExportManifestPdf(calculatedRoutes[i], i);
+      }
+    } catch (err: any) {
+      setErrorBanner(err.message || 'Error al generar todos los manifiestos.');
     }
   };
 
@@ -1322,9 +1389,20 @@ export const PlannerView: React.FC<PlannerViewProps> = ({ onNavigate }) => {
           {/* Route Cards & Stops Accordion */}
           {calculatedRoutes.length > 0 && (
             <div className="space-y-2">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Itinerario de Rutas por Vehículo
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Itinerario de Rutas por Vehículo ({calculatedRoutes.length})
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleExportAllManifests}
+                  className="px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+                  title="Descargar todos los manifiestos en PDF"
+                >
+                  <Printer className="w-3.5 h-3.5 text-blue-500" />
+                  <span>Imprimir Todos ({calculatedRoutes.length})</span>
+                </button>
+              </div>
 
               <div className="grid grid-cols-1 gap-2.5">
                 {calculatedRoutes.map((route, idx) => {
@@ -1398,6 +1476,15 @@ export const PlannerView: React.FC<PlannerViewProps> = ({ onNavigate }) => {
                           </div>
 
                           <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleExportManifestPdf(route, idx)}
+                              className="px-2 py-1.5 rounded border border-blue-200 dark:border-blue-800/80 bg-blue-50/60 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-xs cursor-pointer flex items-center gap-1 font-semibold transition-colors shadow-2xs"
+                              title="Descargar Manifiesto de Despacho y Hoja de Ruta (PDF)"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span className="hidden sm:inline text-[10px]">Manifiesto PDF</span>
+                            </button>
                             <button
                               type="button"
                               onClick={() => setSelectedRouteId(isHighlighted ? null : route.id)}
@@ -1486,6 +1573,18 @@ export const PlannerView: React.FC<PlannerViewProps> = ({ onNavigate }) => {
                               </span>
                               <span className="text-slate-400 text-[10px] font-sans">Fin de jornada</span>
                             </div>
+                          </div>
+
+                          {/* Quick PDF Button at bottom of accordion */}
+                          <div className="pt-2 flex justify-end">
+                            <button
+                              type="button"
+                              onClick={() => handleExportManifestPdf(route, idx)}
+                              className="px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer transition-colors"
+                            >
+                              <FileText className="w-3.5 h-3.5" />
+                              <span>Descargar Hoja de Ruta Oficial (PDF)</span>
+                            </button>
                           </div>
                         </div>
                       )}
