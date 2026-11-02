@@ -31,19 +31,19 @@ export class CreateDeliveryDto {
   @IsString()
   notes?: string;
 
-  @IsOptional()
+  @IsNotEmpty({ message: 'La latitud es obligatoria para optimización de ruta' })
   @Type(() => Number)
   @IsNumber({}, { message: 'La latitud debe ser un número válido' })
   @Min(-90, { message: 'La latitud mínima es -90' })
   @Max(90, { message: 'La latitud máxima es 90' })
-  lat?: number;
+  lat: number;
 
-  @IsOptional()
+  @IsNotEmpty({ message: 'La longitud es obligatoria para optimización de ruta' })
   @Type(() => Number)
   @IsNumber({}, { message: 'La longitud debe ser un número válido' })
   @Min(-180, { message: 'La longitud mínima es -180' })
   @Max(180, { message: 'La longitud máxima es 180' })
-  lng?: number;
+  lng: number;
 
   @IsOptional()
   @Type(() => Number)

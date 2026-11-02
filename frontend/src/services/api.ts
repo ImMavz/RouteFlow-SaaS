@@ -207,6 +207,21 @@ export interface RunOptimizationPayload {
   solverTimeLimitSeconds?: number;
 }
 
+export interface CreateDeliveryPayload {
+  customerName: string;
+  address: string;
+  customerPhone?: string;
+  externalRef?: string;
+  notes?: string;
+  lat: number;
+  lng: number;
+  weightKg?: number;
+  serviceTimeSeconds?: number;
+  deliveryDate: string;
+  windowStart?: string;
+  windowEnd?: string;
+}
+
 export interface FilterDeliveriesParams {
   deliveryDate?: string;
   status?: string;
@@ -220,6 +235,13 @@ export interface FilterRoutesParams {
 
 // 4. Deliveries API
 export const deliveriesApi = {
+  create: (data: CreateDeliveryPayload): Promise<DeliveryRecord> => {
+    return request<DeliveryRecord>('/deliveries', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
   getAll: (params: FilterDeliveriesParams = {}): Promise<DeliveryRecord[]> => {
     const query = new URLSearchParams();
     if (params.deliveryDate) query.append('deliveryDate', params.deliveryDate);
@@ -249,6 +271,20 @@ export const deliveriesApi = {
   delete: (id: string): Promise<{ deleted: boolean; id: string }> => {
     return request<{ deleted: boolean; id: string }>(`/deliveries/${id}`, {
       method: 'DELETE',
+    });
+  },
+
+  update: (id: string, data: Partial<CreateDeliveryPayload>): Promise<DeliveryRecord> => {
+    return request<DeliveryRecord>(`/deliveries/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  },
+
+  updateStatus: (id: string, status: string, note?: string): Promise<DeliveryRecord> => {
+    return request<DeliveryRecord>(`/deliveries/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, note }),
     });
   },
 };

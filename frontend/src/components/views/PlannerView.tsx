@@ -15,6 +15,7 @@ import {
   ShieldAlert,
   Boxes,
   Trash2,
+  Plus,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -28,6 +29,7 @@ import {
   routesApi,
 } from '../../services/api';
 import { fetchRouteStreetGeometry, calculateDistanceKm } from '../../services/osrm';
+import { CreateDeliveryModal } from '../deliveries/CreateDeliveryModal';
 import type {
   Warehouse,
   VehicleRecord,
@@ -123,6 +125,7 @@ export const PlannerView: React.FC<PlannerViewProps> = ({ onNavigate }) => {
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
   const [isUploadingCsv, setIsUploadingCsv] = useState<boolean>(false);
+  const [isCreateDeliveryOpen, setIsCreateDeliveryOpen] = useState<boolean>(false);
   const [routeGeometries, setRouteGeometries] = useState<Record<string, [number, number][]>>({});
   const [isDeletingRouteId, setIsDeletingRouteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -279,6 +282,16 @@ export const PlannerView: React.FC<PlannerViewProps> = ({ onNavigate }) => {
       setIsUploadingCsv(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
+  };
+
+  // Handler for manual delivery creation from modal
+  const handleDeliveryCreated = (newDelivery: DeliveryRecord) => {
+    setPendingDeliveries((prev) => [newDelivery, ...prev.filter((d) => d.id !== newDelivery.id)]);
+    setSuccessBanner(`Entrega para "${newDelivery.customerName}" registrada exitosamente.`);
+    // Synchronize pending deliveries in background
+    deliveriesApi.getPending(deliveryDate).then((list) => {
+      setPendingDeliveries(list);
+    }).catch(() => {});
   };
 
   // Run VRP Optimization via API
@@ -692,8 +705,17 @@ export const PlannerView: React.FC<PlannerViewProps> = ({ onNavigate }) => {
           </p>
         </div>
 
-        {/* Primary Action Button */}
+        {/* Primary Action Buttons */}
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsCreateDeliveryOpen(true)}
+            className="px-3.5 py-2 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-medium text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5 text-blue-500" />
+            <span>Nueva Entrega</span>
+          </button>
+
           <button
             type="button"
             onClick={handleRunOptimization}
@@ -899,6 +921,15 @@ export const PlannerView: React.FC<PlannerViewProps> = ({ onNavigate }) => {
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
+                  onClick={() => setIsCreateDeliveryOpen(true)}
+                  title="Registrar nueva entrega manual"
+                  className="px-2 py-1 rounded border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-600 dark:text-blue-400 text-[11px] font-medium flex items-center gap-1 cursor-pointer transition-colors"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Manual</span>
+                </button>
+                <button
+                  type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isUploadingCsv}
                   title="Subir archivo CSV de entregas"
@@ -916,19 +947,34 @@ export const PlannerView: React.FC<PlannerViewProps> = ({ onNavigate }) => {
               </div>
             </div>
 
-            {/* Quick CSV dropzone when 0 deliveries */}
+            {/* Quick action dropzones when 0 deliveries */}
             {pendingDeliveries.length === 0 && (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="p-4 rounded-md border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500/50 transition-colors"
-              >
-                <FileSpreadsheet className="w-5 h-5 text-slate-400 mb-1.5" />
-                <p className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                  {isUploadingCsv ? 'Procesando archivo CSV...' : 'Subir CSV de entregas para esta fecha'}
-                </p>
-                <p className="text-[10px] text-slate-400 mt-0.5">
-                  Clic aquí para importar pedidos con lat, lng y peso
-                </p>
+              <div className="grid grid-cols-2 gap-2">
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-3 rounded-md border border-dashed border-slate-300 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/30 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500/50 transition-colors"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-slate-400 mb-1" />
+                  <p className="text-[11px] font-medium text-slate-700 dark:text-slate-300">
+                    {isUploadingCsv ? 'Procesando...' : 'Subir CSV'}
+                  </p>
+                  <p className="text-[9px] text-slate-400 mt-0.5">
+                    Carga masiva
+                  </p>
+                </div>
+
+                <div
+                  onClick={() => setIsCreateDeliveryOpen(true)}
+                  className="p-3 rounded-md border border-dashed border-blue-300 dark:border-blue-800/80 bg-blue-50/30 dark:bg-blue-950/20 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 transition-colors"
+                >
+                  <Plus className="w-4 h-4 text-blue-500 mb-1" />
+                  <p className="text-[11px] font-medium text-blue-600 dark:text-blue-400">
+                    Punto Manual
+                  </p>
+                  <p className="text-[9px] text-slate-400 mt-0.5">
+                    Fijar con pin
+                  </p>
+                </div>
               </div>
             )}
 
@@ -1453,6 +1499,14 @@ export const PlannerView: React.FC<PlannerViewProps> = ({ onNavigate }) => {
         </div>
 
       </div>
+
+      <CreateDeliveryModal
+        isOpen={isCreateDeliveryOpen}
+        onClose={() => setIsCreateDeliveryOpen(false)}
+        onSuccess={handleDeliveryCreated}
+        initialDate={deliveryDate}
+        defaultWarehouse={selectedWarehouse}
+      />
 
     </div>
   );

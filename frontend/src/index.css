@@ -74,3 +74,19 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
+
+/* Native select & option contrast across light and dark themes */
+select {
+  color-scheme: light dark;
+}
+
+option {
+  background-color: #ffffff;
+  color: #0f172a;
+}
+
+.dark option {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+

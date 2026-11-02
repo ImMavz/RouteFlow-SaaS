@@ -55,6 +55,9 @@ export class DeliveriesService {
     if (!dto.deliveryDate) {
       throw new BadRequestException('La fecha de entrega es obligatoria');
     }
+    if (dto.lat === undefined || dto.lat === null || dto.lng === undefined || dto.lng === null) {
+      throw new BadRequestException('Las coordenadas (latitud y longitud) son obligatorias');
+    }
 
     const geocodeStatus = this.validateCoordinates(dto.lat, dto.lng);
 
@@ -76,6 +79,7 @@ export class DeliveriesService {
 
       const delivery = manager.create(Delivery, {
         companyId,
+        importId: null,
         externalRef: dto.externalRef?.trim() || null,
         customerName: dto.customerName.trim(),
         customerPhone: dto.customerPhone?.trim() || null,
@@ -100,12 +104,20 @@ export class DeliveriesService {
         deliveryId: savedDelivery.id,
         status: DeliveryStatus.PENDING,
         changedBy: userId || null,
-        note: 'Creación de entrega',
+        note: 'Punto de entrega registrado manualmente',
       });
       await manager.save(DeliveryEvent, initialEvent);
 
       return savedDelivery;
     });
+  }
+
+  async createManual(
+    companyId: string,
+    userId: string,
+    dto: CreateDeliveryDto,
+  ): Promise<Delivery> {
+    return this.create(companyId, userId, dto);
   }
 
   async findAll(companyId: string, filter: FilterDeliveriesDto): Promise<Delivery[]> {
