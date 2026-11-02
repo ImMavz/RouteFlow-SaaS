@@ -104,3 +104,99 @@ export interface VehicleRecord {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export type GeocodeStatus = 'pending' | 'ok' | 'failed' | 'manual';
+export type DeliveryRecordStatus = 'pending' | 'planned' | 'in_transit' | 'delivered' | 'failed' | 'cancelled';
+
+export interface DeliveryRecord {
+  id: string;
+  companyId: string;
+  externalRef?: string | null;
+  customerName: string;
+  address: string;
+  city?: string | null;
+  phone?: string | null;
+  lat: number;
+  lng: number;
+  geocodeStatus: GeocodeStatus;
+  weightKg: number;
+  volumeM3?: number | null;
+  serviceTimeSeconds: number;
+  windowStart?: string | null;
+  windowEnd?: string | null;
+  deliveryDate: string;
+  status: DeliveryRecordStatus;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface OptimizationResultRoute {
+  id: string;
+  vehicleId: string;
+  vehiclePlate?: string;
+  totalDistanceKm: number;
+  totalDurationMin: number;
+  totalLoadKg: number;
+  stopsCount: number;
+}
+
+export interface OptimizationResponse {
+  optimizationRunId: string;
+  status: 'success' | 'partial' | 'failed' | 'infeasible';
+  message: string;
+  durationMs: number;
+  totalRoutes: number;
+  totalAssignedDeliveries: number;
+  unassignedDeliveryIds: string[];
+  routes: OptimizationResultRoute[];
+}
+
+export interface BackendRouteStop {
+  id: string;
+  companyId?: string;
+  routeId: string;
+  deliveryId: string;
+  sequence: number;
+  etaOffsetSeconds?: number | null;
+  delivery?: DeliveryRecord;
+  stopOrder?: number;
+}
+
+export interface BackendRoute {
+  id: string;
+  companyId: string;
+  vehicleId: string;
+  warehouseId: string;
+  driverId?: string | null;
+  optimizationRunId?: string | null;
+  routeDate: string;
+  status: 'planned' | 'in_progress' | 'completed' | 'cancelled';
+  totalDistanceMeters?: number | null;
+  totalDurationSeconds?: number | null;
+  totalLoadKg?: number | null;
+  totalDistanceKm?: number;
+  totalDurationMin?: number;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  vehicle?: VehicleRecord;
+  warehouse?: Warehouse;
+  driver?: { id: string; fullName?: string; email?: string } | null;
+  stops?: BackendRouteStop[];
+}
+
+export interface OptimizationRunRecord {
+  id: string;
+  companyId: string;
+  requestedBy?: string | null;
+  status: 'success' | 'error';
+  request: Record<string, any>;
+  response?: Record<string, any> | null;
+  errorMessage?: string | null;
+  durationMs?: number | null;
+  createdAt: string;
+  routes?: BackendRoute[];
+}
+

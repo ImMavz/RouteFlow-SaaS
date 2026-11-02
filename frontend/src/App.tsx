@@ -142,7 +142,7 @@ const AppContent: React.FC = () => {
           )}
 
           {currentView === 'planner' && (
-            <PlannerView />
+            <PlannerView onNavigate={setCurrentView} />
           )}
 
           {currentView === 'live-tracking' && (

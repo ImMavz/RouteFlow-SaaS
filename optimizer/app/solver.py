@@ -50,7 +50,9 @@ def solve_vrp(
             continue
         start = d.time_window_start or 0
         end = d.time_window_end if d.time_window_end is not None else HORIZON_SECONDS
-        time_dim.CumulVar(manager.NodeToIndex(i + 1)).SetRange(start, end)
+        time_dim.CumulVar(manager.NodeToIndex(i + 1)).SetMin(start)
+        # Cota suave para penalizar entregas demoradas sin descartar el pedido si es viable
+        time_dim.SetCumulVarSoftUpperBound(manager.NodeToIndex(i + 1), end, 50_000)
 
     # Capacidad en kg
     def demand_callback(from_index: int) -> int:

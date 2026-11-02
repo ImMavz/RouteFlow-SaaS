@@ -1,0 +1,6 @@
+cliente,direccion,latitud,longitud,peso_kg,tiempo_servicio_min,fecha_entrega,ventana_inicio,ventana_fin,referencia
+Exito Calle 80,Calle 80 # 65-10,4.6852,-74.0815,250,15,2026-11-10,08:00,12:00,PED-001
+D1 Parque 93,Cra 11 # 93-20,4.6765,-74.0482,80,10,2026-11-10,13:00,17:00,PED-002
+Cliente Coordenada Erronea,Calle 100 # 15-20,95.5000,-74.0500,45,10,2026-11-10,09:00,11:00,PED-003
+Jumbo Santa Ana,Av Carrera 9 # 110-20,4.6931,-74.0322,180,20,2026-11-10,10:00,14:00,PED-004
+

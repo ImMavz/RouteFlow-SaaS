@@ -1,4 +1,12 @@
-import type { Warehouse, VehicleRecord, BackendVehicleStatus } from '../types';
+import type {
+  Warehouse,
+  VehicleRecord,
+  BackendVehicleStatus,
+  DeliveryRecord,
+  OptimizationResponse,
+  OptimizationRunRecord,
+  BackendRoute,
+} from '../types';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -66,7 +74,7 @@ export const tokenStorage = {
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = tokenStorage.get();
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    ...(options.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
     ...(options.headers as Record<string, string>),
   };
 
@@ -191,4 +199,101 @@ export const vehiclesApi = {
     });
   },
 };
+
+export interface RunOptimizationPayload {
+  warehouseId: string;
+  deliveryDate: string;
+  vehicleIds?: string[];
+  solverTimeLimitSeconds?: number;
+}
+
+export interface FilterDeliveriesParams {
+  deliveryDate?: string;
+  status?: string;
+  search?: string;
+}
+
+export interface FilterRoutesParams {
+  routeDate?: string;
+  vehicleId?: string;
+}
+
+// 4. Deliveries API
+export const deliveriesApi = {
+  getAll: (params: FilterDeliveriesParams = {}): Promise<DeliveryRecord[]> => {
+    const query = new URLSearchParams();
+    if (params.deliveryDate) query.append('deliveryDate', params.deliveryDate);
+    if (params.status) query.append('status', params.status);
+    if (params.search) query.append('search', params.search);
+    const qs = query.toString();
+    return request<DeliveryRecord[]>(`/deliveries${qs ? `?${qs}` : ''}`);
+  },
+
+  getPending: (deliveryDate: string): Promise<DeliveryRecord[]> => {
+    return deliveriesApi.getAll({ deliveryDate, status: 'pending' });
+  },
+
+  getOne: (id: string): Promise<DeliveryRecord> => {
+    return request<DeliveryRecord>(`/deliveries/${id}`);
+  },
+
+  uploadCsv: (file: File): Promise<{ message: string; successfulRows: number; failedRows: number; totalRows: number }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return request('/deliveries/upload-csv', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+
+  delete: (id: string): Promise<{ deleted: boolean; id: string }> => {
+    return request<{ deleted: boolean; id: string }>(`/deliveries/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// 5. Optimizations API
+export const optimizationsApi = {
+  run: (payload: RunOptimizationPayload): Promise<OptimizationResponse> => {
+    return request<OptimizationResponse>('/optimizations/run', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  getRuns: (): Promise<OptimizationRunRecord[]> => {
+    return request<OptimizationRunRecord[]>('/optimizations/runs');
+  },
+
+  getRunById: (id: string): Promise<OptimizationRunRecord> => {
+    return request<OptimizationRunRecord>(`/optimizations/runs/${id}`);
+  },
+};
+
+// 6. Routes API
+export const routesApi = {
+  getAll: (params: FilterRoutesParams = {}): Promise<BackendRoute[]> => {
+    const query = new URLSearchParams();
+    if (params.routeDate) query.append('routeDate', params.routeDate);
+    if (params.vehicleId) query.append('vehicleId', params.vehicleId);
+    const qs = query.toString();
+    return request<BackendRoute[]>(`/routes${qs ? `?${qs}` : ''}`);
+  },
+
+  getByDate: (deliveryDate: string): Promise<BackendRoute[]> => {
+    return routesApi.getAll({ routeDate: deliveryDate });
+  },
+
+  getById: (routeId: string): Promise<BackendRoute> => {
+    return request<BackendRoute>(`/routes/${routeId}`);
+  },
+
+  delete: (routeId: string): Promise<{ deleted: boolean; id: string; restoredDeliveries: number }> => {
+    return request<{ deleted: boolean; id: string; restoredDeliveries: number }>(`/routes/${routeId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 

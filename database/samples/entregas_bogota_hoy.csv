@@ -1,0 +1,6 @@
+cliente,direccion,latitud,longitud,peso_kg,tiempo_servicio_min,fecha_entrega,ventana_inicio,ventana_fin,referencia
+Exito Calle 80,Calle 80 # 65-10,4.6852,-74.0815,180,15,2026-11-02,08:00,12:00,BOG-101
+D1 Parque 93,Cra 11 # 93-20,4.6765,-74.0482,90,10,2026-11-02,08:30,13:00,BOG-102
+Jumbo Santa Ana,Av Carrera 9 # 110-20,4.6931,-74.0322,220,20,2026-11-02,09:00,14:00,BOG-103
+Carulla Pepe Sierra,Calle 116 # 15-40,4.6980,-74.0450,110,15,2026-11-02,10:00,15:00,BOG-104
+Farmatodo Chapinero,Cra 7 # 67-15,4.6530,-74.0580,75,10,2026-11-02,11:00,16:00,BOG-105
