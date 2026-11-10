@@ -354,4 +354,77 @@ export const routesApi = {
   },
 };
 
+// 7. Analytics API
+export interface DashboardSummaryResponse {
+  date: string;
+  deliveries: {
+    total: number;
+    pending: number;
+    planned: number;
+    inTransit: number;
+    delivered: number;
+    failed: number;
+    cancelled: number;
+    fulfillmentRate: number;
+  };
+  fleet: {
+    activeVehicles: number;
+    totalVehicles: number;
+    occupancyRate: number;
+    totalLoadKg: number;
+    totalCapacityKg: number;
+  };
+  vrp: {
+    routesCount: number;
+    totalDistanceKm: number;
+    totalDurationMinutes: number;
+    fuelSavedLiters: number;
+    kmOptimized: number;
+  };
+}
+
+export interface WeeklyVolumeItem {
+  date: string;
+  total: number;
+  delivered: number;
+  failed: number;
+  planned: number;
+  inTransit: number;
+}
+
+export interface RouteOverviewItem {
+  id: string;
+  code: string;
+  name: string;
+  vehicleId: string;
+  vehiclePlate: string;
+  vehicleModel: string;
+  driverName: string;
+  status: string;
+  totalDistanceKm: number;
+  totalDurationMin: number;
+  totalLoadKg: number;
+  capacityKg: number;
+  stopsCount: number;
+  completedStops: number;
+  pendingStops: number;
+  departureTime: string;
+  efficiencyScore: number;
+}
+
+export const analyticsApi = {
+  getSummary: (date?: string): Promise<DashboardSummaryResponse> => {
+    return request<DashboardSummaryResponse>(`/analytics/summary${date ? `?date=${date}` : ''}`);
+  },
+
+  getWeeklyVolume: (endDate?: string): Promise<WeeklyVolumeItem[]> => {
+    return request<WeeklyVolumeItem[]>(`/analytics/weekly-volume${endDate ? `?endDate=${endDate}` : ''}`);
+  },
+
+  getActiveRoutes: (date?: string): Promise<RouteOverviewItem[]> => {
+    return request<RouteOverviewItem[]>(`/analytics/routes${date ? `?date=${date}` : ''}`);
+  },
+};
+
+
 

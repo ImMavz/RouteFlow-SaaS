@@ -9,19 +9,41 @@ import {
   RotateCw
 } from 'lucide-react';
 import { mockRoutes } from '../../data/mockData';
-import type { DeliveryRoute } from '../../types';
+import type { RouteOverviewItem } from '../../services/api';
 
 interface LiveRoutesTableProps {
-  onSelectRoute?: (route: DeliveryRoute) => void;
+  routes?: RouteOverviewItem[];
+  isLoading?: boolean;
+  onRefresh?: () => void;
+  onSelectRoute?: (route: any) => void;
 }
 
-export const LiveRoutesTable: React.FC<LiveRoutesTableProps> = ({ onSelectRoute }) => {
-  const [filterStatus, setFilterStatus] = useState<'todas' | 'en_transito' | 'demorada' | 'completada'>('todas');
+export const LiveRoutesTable: React.FC<LiveRoutesTableProps> = ({
+  routes: realRoutes,
+  isLoading = false,
+  onRefresh,
+  onSelectRoute,
+}) => {
+  const [filterStatus, setFilterStatus] = useState<string>('todas');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredRoutes = mockRoutes.filter((r) => {
-    const matchesFilter = filterStatus === 'todas' ? true : r.status === filterStatus;
-    const matchesSearch = 
+  // Use realRoutes if provided, otherwise mockRoutes
+  const dataSource = realRoutes ?? (mockRoutes as any[]);
+
+  const filteredRoutes = dataSource.filter((r) => {
+    const status = r.status?.toLowerCase() || '';
+    const matchesFilter =
+      filterStatus === 'todas'
+        ? true
+        : filterStatus === 'en_transito'
+        ? status === 'en_transito' || status === 'in_progress'
+        : filterStatus === 'completada'
+        ? status === 'completada' || status === 'completed'
+        : filterStatus === 'demorada'
+        ? status === 'demorada' || status === 'cancelled'
+        : status === filterStatus;
+
+    const matchesSearch =
       r.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       r.driverName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -29,38 +51,37 @@ export const LiveRoutesTable: React.FC<LiveRoutesTableProps> = ({ onSelectRoute 
     return matchesFilter && matchesSearch;
   });
 
-  const getStatusBadge = (status: DeliveryRoute['status']) => {
-    switch (status) {
-      case 'en_transito':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
-            En Ruta
-          </span>
-        );
-      case 'demorada':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
-            <AlertTriangle className="w-3 h-3 text-amber-600" />
-            Demora
-          </span>
-        );
-      case 'completada':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-            Finalizada
-          </span>
-        );
-      case 'optimizando':
-        return (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-            Optimizando
-          </span>
-        );
-      default:
-        return null;
+  const getStatusBadge = (statusStr: string) => {
+    const s = statusStr?.toLowerCase();
+    if (s === 'en_transito' || s === 'in_progress') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400" />
+          En Ruta
+        </span>
+      );
     }
+    if (s === 'demorada' || s === 'cancelled') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20">
+          <AlertTriangle className="w-3 h-3 text-amber-600" />
+          {s === 'cancelled' ? 'Cancelada' : 'Demora'}
+        </span>
+      );
+    }
+    if (s === 'completada' || s === 'completed') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+          Finalizada
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+        Planificada
+      </span>
+    );
   };
 
   return (
@@ -136,108 +157,129 @@ export const LiveRoutesTable: React.FC<LiveRoutesTableProps> = ({ onSelectRoute 
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
-            {filteredRoutes.map((route) => {
-              const progressPercent = Math.round((route.completedStops / route.stopsCount) * 100);
+            {isLoading ? (
+              <tr>
+                <td colSpan={7} className="py-8 text-center text-slate-400">
+                  <RotateCw className="w-5 h-5 mx-auto mb-2 animate-spin text-blue-500" />
+                  <p className="font-sans text-xs">Cargando rutas de despacho...</p>
+                </td>
+              </tr>
+            ) : filteredRoutes.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-8 text-center text-slate-400">
+                  <Truck className="w-6 h-6 mx-auto mb-1.5 opacity-40 text-slate-400" />
+                  <p className="font-sans text-xs">No hay rutas registradas para esta fecha.</p>
+                  <p className="font-sans text-[11px] text-slate-500 mt-0.5">
+                    Puedes generar un despacho optimizado desde el Planificador VRP.
+                  </p>
+                </td>
+              </tr>
+            ) : (
+              filteredRoutes.map((route) => {
+                const stopsCount = route.stopsCount || 1;
+                const completedStops = route.completedStops || 0;
+                const progressPercent = Math.min(100, Math.round((completedStops / stopsCount) * 100));
 
-              return (
-                <tr 
-                  key={route.id}
-                  className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group cursor-pointer"
-                  onClick={() => onSelectRoute?.(route)}
-                >
-                  {/* Code & Name */}
-                  <td className="py-2.5 px-3">
-                    <div className="flex items-center gap-2">
+                return (
+                  <tr 
+                    key={route.id}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors group cursor-pointer"
+                    onClick={() => onSelectRoute?.(route)}
+                  >
+                    {/* Code & Name */}
+                    <td className="py-2.5 px-3">
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <span className="font-semibold text-slate-900 dark:text-white">
+                            {route.code}
+                          </span>
+                          <p className="font-sans text-[11px] text-slate-500 dark:text-slate-400 max-w-xs truncate">
+                            {route.name}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* Vehicle & Driver */}
+                    <td className="py-2.5 px-3">
                       <div>
-                        <span className="font-semibold text-slate-900 dark:text-white">
-                          {route.code}
-                        </span>
-                        <p className="font-sans text-[11px] text-slate-500 dark:text-slate-400 max-w-xs truncate">
-                          {route.name}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-
-                  {/* Vehicle & Driver */}
-                  <td className="py-2.5 px-3">
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <Truck className="w-3.5 h-3.5 text-slate-400" />
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
-                          {route.vehiclePlate}
+                        <div className="flex items-center gap-1.5">
+                          <Truck className="w-3.5 h-3.5 text-slate-400" />
+                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                            {route.vehiclePlate}
+                          </span>
+                        </div>
+                        <span className="font-sans text-[11px] text-slate-500 dark:text-slate-400">
+                          {route.driverName}
                         </span>
                       </div>
-                      <span className="font-sans text-[11px] text-slate-500 dark:text-slate-400">
-                        {route.driverName}
-                      </span>
-                    </div>
-                  </td>
+                    </td>
 
-                  {/* Status Badge */}
-                  <td className="py-2.5 px-3">
-                    {getStatusBadge(route.status)}
-                  </td>
+                    {/* Status Badge */}
+                    <td className="py-2.5 px-3">
+                      {getStatusBadge(route.status)}
+                    </td>
 
-                  {/* Progress bar */}
-                  <td className="py-2.5 px-3 min-w-[130px]">
-                    <div className="flex items-center justify-between text-[11px] mb-1">
-                      <span className="font-sans text-slate-700 dark:text-slate-300">
-                        {route.completedStops}/{route.stopsCount}
-                      </span>
-                      <span className="text-slate-400">{progressPercent}%</span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-200 ${
-                          progressPercent === 100
-                            ? 'bg-emerald-500'
-                            : route.status === 'demorada'
-                            ? 'bg-amber-500'
-                            : 'bg-blue-600'
-                        }`}
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </div>
-                  </td>
-
-                  {/* Distance & ETA */}
-                  <td className="py-2.5 px-3">
-                    <div>
-                      <span className="font-medium text-slate-800 dark:text-slate-200">
-                        {route.totalDistanceKm} km
-                      </span>
-                      <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
-                        <Clock className="w-3 h-3" />
-                        <span>{route.estimatedReturn}</span>
+                    {/* Progress bar */}
+                    <td className="py-2.5 px-3 min-w-[130px]">
+                      <div className="flex items-center justify-between text-[11px] mb-1">
+                        <span className="font-sans text-slate-700 dark:text-slate-300">
+                          {completedStops}/{stopsCount}
+                        </span>
+                        <span className="text-slate-400">{progressPercent}%</span>
                       </div>
-                    </div>
-                  </td>
+                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full transition-all duration-200 ${
+                            progressPercent === 100
+                              ? 'bg-emerald-500'
+                              : route.status === 'demorada'
+                              ? 'bg-amber-500'
+                              : 'bg-blue-600'
+                          }`}
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                    </td>
 
-                  {/* Efficiency VRP */}
-                  <td className="py-2.5 px-3 text-right">
-                    <span className="inline-block text-xs font-semibold text-slate-900 dark:text-white">
-                      {route.efficiencyScore}%
-                    </span>
-                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
-                      -{route.timeSavedMin}m
-                    </p>
-                  </td>
+                    {/* Distance & ETA */}
+                    <td className="py-2.5 px-3">
+                      <div>
+                        <span className="font-medium text-slate-800 dark:text-slate-200">
+                          {route.totalDistanceKm} km
+                        </span>
+                        <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
+                          <Clock className="w-3 h-3" />
+                          <span>{route.estimatedReturn || route.departureTime || 'En jornada'}</span>
+                        </div>
+                      </div>
+                    </td>
 
-                  {/* Actions */}
-                  <td className="py-2.5 px-3 text-right">
-                    <button
-                      type="button"
-                      onClick={(e) => { e.stopPropagation(); onSelectRoute?.(route); }}
-                      className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                      title="Ver ruta"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
+                    {/* Efficiency VRP */}
+                    <td className="py-2.5 px-3 text-right">
+                      <span className="inline-block text-xs font-semibold text-slate-900 dark:text-white">
+                        {route.efficiencyScore}%
+                      </span>
+                      <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                        {route.timeSavedMin ? `-${route.timeSavedMin}m` : `${route.stopsCount} paradas`}
+                      </p>
+                    </td>
+
+                    {/* Actions */}
+                    <td className="py-2.5 px-3 text-right">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onSelectRoute?.(route); }}
+                        className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        title="Ver ruta"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
@@ -245,14 +287,16 @@ export const LiveRoutesTable: React.FC<LiveRoutesTableProps> = ({ onSelectRoute 
       {/* Footer */}
       <div className="mt-3 pt-2.5 flex flex-col sm:flex-row items-center justify-between text-[11px] font-mono text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800 gap-2">
         <span>Matriz OSRM activa · Perfil auto / camión</span>
-        <button
-          type="button"
-          onClick={() => alert('Sincronizando estado telemático...')}
-          className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
-        >
-          <RotateCw className="w-3 h-3" />
-          Actualizar telemetría
-        </button>
+        {onRefresh && (
+          <button
+            type="button"
+            onClick={onRefresh}
+            className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <RotateCw className="w-3 h-3" />
+            Actualizar telemetría
+          </button>
+        )}
       </div>
 
     </div>
