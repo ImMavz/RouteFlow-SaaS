@@ -20,6 +20,7 @@ import { CreateDeliveryDto } from './dto/create-delivery.dto.js';
 import { UpdateDeliveryDto } from './dto/update-delivery.dto.js';
 import { FilterDeliveriesDto } from './dto/filter-deliveries.dto.js';
 import { UpdateDeliveryStatusDto } from './dto/update-delivery-status.dto.js';
+import { ChangeDeliveryStatusDto } from './dto/change-delivery-status.dto.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 
@@ -88,9 +89,17 @@ export class DeliveriesController {
     @CurrentUser('companyId') companyId: string,
     @CurrentUser('userId') userId: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateDeliveryStatusDto,
+    @Body() dto: ChangeDeliveryStatusDto,
   ) {
-    return this.deliveriesService.updateStatus(companyId, userId, id, dto);
+    return this.deliveriesService.changeStatus(companyId, userId, id, dto);
+  }
+
+  @Get(':id/events')
+  getTimeline(
+    @CurrentUser('companyId') companyId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.deliveriesService.getDeliveryTimeline(companyId, id);
   }
 
   @Delete(':id')

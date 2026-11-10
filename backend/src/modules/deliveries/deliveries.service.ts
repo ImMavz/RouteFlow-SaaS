@@ -13,6 +13,7 @@ import type { CreateDeliveryDto } from './dto/create-delivery.dto.js';
 import type { UpdateDeliveryDto } from './dto/update-delivery.dto.js';
 import type { FilterDeliveriesDto } from './dto/filter-deliveries.dto.js';
 import type { UpdateDeliveryStatusDto } from './dto/update-delivery-status.dto.js';
+import type { ChangeDeliveryStatusDto } from './dto/change-delivery-status.dto.js';
 
 @Injectable()
 export class DeliveriesService {
@@ -247,11 +248,11 @@ export class DeliveriesService {
     });
   }
 
-  async updateStatus(
+  async changeStatus(
     companyId: string,
     userId: string,
     id: string,
-    dto: UpdateDeliveryStatusDto,
+    dto: ChangeDeliveryStatusDto,
   ): Promise<Delivery> {
     if (
       (dto.status === DeliveryStatus.FAILED || dto.status === DeliveryStatus.CANCELLED) &&
@@ -272,8 +273,10 @@ export class DeliveriesService {
       }
 
       delivery.status = dto.status;
-      if (dto.failureReason) {
-        delivery.failureReason = dto.failureReason.trim();
+      if (dto.status === DeliveryStatus.FAILED || dto.status === DeliveryStatus.CANCELLED) {
+        delivery.failureReason = dto.failureReason?.trim() || dto.note?.trim() || null;
+      } else {
+        delivery.failureReason = null;
       }
 
       const savedDelivery = await manager.save(Delivery, delivery);
@@ -282,6 +285,7 @@ export class DeliveriesService {
       const event = manager.create(DeliveryEvent, {
         companyId,
         deliveryId: id,
+        routeStopId: dto.routeStopId || null,
         status: dto.status,
         changedBy: userId || null,
         note: dto.note?.trim() || dto.failureReason?.trim() || null,
@@ -289,6 +293,51 @@ export class DeliveriesService {
       await manager.save(DeliveryEvent, event);
 
       return savedDelivery;
+    });
+  }
+
+  async updateStatus(
+    companyId: string,
+    userId: string,
+    id: string,
+    dto: UpdateDeliveryStatusDto | ChangeDeliveryStatusDto,
+  ): Promise<Delivery> {
+    return this.changeStatus(companyId, userId, id, dto);
+  }
+
+  async getDeliveryTimeline(companyId: string, deliveryId: string) {
+    return this.rlsService.runWithTenant(companyId, async (manager) => {
+      const delivery = await manager.findOne(Delivery, {
+        where: { id: deliveryId, companyId },
+      });
+      if (!delivery) {
+        throw new NotFoundException(`Entrega con ID ${deliveryId} no encontrada`);
+      }
+
+      const events = await manager.find(DeliveryEvent, {
+        where: { deliveryId, companyId },
+        relations: { user: true },
+        order: { createdAt: 'ASC' },
+      });
+
+      return events.map((event) => ({
+        id: event.id,
+        companyId: event.companyId,
+        deliveryId: event.deliveryId,
+        routeStopId: event.routeStopId ?? null,
+        status: event.status,
+        note: event.note ?? null,
+        createdAt: event.createdAt,
+        changedBy: event.changedBy ?? null,
+        user: event.user
+          ? {
+              id: event.user.id,
+              fullName: event.user.fullName,
+              email: event.user.email,
+              role: event.user.role,
+            }
+          : null,
+      }));
     });
   }
 

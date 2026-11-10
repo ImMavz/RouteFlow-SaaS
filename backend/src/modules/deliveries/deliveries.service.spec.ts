@@ -103,6 +103,50 @@ describe('DeliveriesService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('debe registrar failureReason y routeStopId al fallar una entrega con changeStatus', async () => {
+    const existingDelivery = {
+      id: 'del-1',
+      companyId: 'tenant-1',
+      status: DeliveryStatus.IN_TRANSIT,
+    };
+    mockEntityManager.findOne.mockResolvedValue(existingDelivery);
+
+    const updated = await service.changeStatus('tenant-1', 'user-1', 'del-1', {
+      status: DeliveryStatus.FAILED,
+      failureReason: 'Cliente ausente',
+      routeStopId: 'stop-uuid-1',
+    });
+
+    expect(updated.status).toBe(DeliveryStatus.FAILED);
+    expect(updated.failureReason).toBe('Cliente ausente');
+    expect(mockEntityManager.create).toHaveBeenCalledWith(DeliveryEvent, expect.objectContaining({
+      deliveryId: 'del-1',
+      routeStopId: 'stop-uuid-1',
+      status: DeliveryStatus.FAILED,
+      note: 'Cliente ausente',
+    }));
+  });
+
+  it('debe retornar la línea de tiempo cronológica con datos seguros de usuario', async () => {
+    mockEntityManager.findOne.mockResolvedValue({ id: 'del-1', companyId: 'tenant-1' });
+    mockEntityManager.find.mockResolvedValue([
+      {
+        id: '1',
+        companyId: 'tenant-1',
+        deliveryId: 'del-1',
+        status: DeliveryStatus.PENDING,
+        createdAt: new Date('2026-11-10T10:00:00Z'),
+        user: { id: 'u1', fullName: 'Juanito Pérez', email: 'juan@test.com', role: 'dispatcher', passwordHash: 'secret' },
+      },
+    ]);
+
+    const timeline = await service.getDeliveryTimeline('tenant-1', 'del-1');
+    expect(timeline).toHaveLength(1);
+    expect(timeline[0].status).toBe(DeliveryStatus.PENDING);
+    expect(timeline[0].user?.fullName).toBe('Juanito Pérez');
+    expect((timeline[0].user as any).passwordHash).toBeUndefined();
+  });
+
   it('debe lanzar NotFoundException si no existe en findOne', async () => {
     mockEntityManager.findOne.mockResolvedValue(null);
     await expect(service.findOne('tenant-1', 'non-existent')).rejects.toThrow(NotFoundException);

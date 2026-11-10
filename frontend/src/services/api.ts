@@ -3,6 +3,8 @@ import type {
   VehicleRecord,
   BackendVehicleStatus,
   DeliveryRecord,
+  DeliveryRecordStatus,
+  DeliveryEventRecord,
   OptimizationResponse,
   OptimizationRunRecord,
   BackendRoute,
@@ -281,11 +283,31 @@ export const deliveriesApi = {
     });
   },
 
-  updateStatus: (id: string, status: string, note?: string): Promise<DeliveryRecord> => {
+  updateStatus: (
+    id: string,
+    statusOrPayload:
+      | DeliveryRecordStatus
+      | string
+      | {
+          status: DeliveryRecordStatus | string;
+          note?: string;
+          failureReason?: string;
+          routeStopId?: string;
+        },
+    note?: string,
+  ): Promise<DeliveryRecord> => {
+    const body =
+      typeof statusOrPayload === 'string'
+        ? { status: statusOrPayload, note }
+        : statusOrPayload;
     return request<DeliveryRecord>(`/deliveries/${id}/status`, {
       method: 'PATCH',
-      body: JSON.stringify({ status, note }),
+      body: JSON.stringify(body),
     });
+  },
+
+  getTimeline: (id: string): Promise<DeliveryEventRecord[]> => {
+    return request<DeliveryEventRecord[]>(`/deliveries/${id}/events`);
   },
 };
 

@@ -108,6 +108,25 @@ export interface VehicleRecord {
 export type GeocodeStatus = 'pending' | 'ok' | 'failed' | 'manual';
 export type DeliveryRecordStatus = 'pending' | 'planned' | 'in_transit' | 'delivered' | 'failed' | 'cancelled';
 
+export interface DeliveryEventUser {
+  id: string;
+  fullName: string;
+  email: string;
+  role: string;
+}
+
+export interface DeliveryEventRecord {
+  id: string;
+  companyId: string;
+  deliveryId: string;
+  routeStopId?: string | null;
+  status: DeliveryRecordStatus;
+  changedBy?: string | null;
+  note?: string | null;
+  createdAt: string;
+  user?: DeliveryEventUser | null;
+}
+
 export interface DeliveryRecord {
   id: string;
   companyId: string;
@@ -116,6 +135,7 @@ export interface DeliveryRecord {
   address: string;
   city?: string | null;
   phone?: string | null;
+  customerPhone?: string | null;
   lat: number;
   lng: number;
   geocodeStatus: GeocodeStatus;
@@ -127,6 +147,7 @@ export interface DeliveryRecord {
   deliveryDate: string;
   status: DeliveryRecordStatus;
   notes?: string | null;
+  failureReason?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

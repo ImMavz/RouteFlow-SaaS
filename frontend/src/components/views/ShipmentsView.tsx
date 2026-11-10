@@ -16,9 +16,12 @@ import {
   Phone,
   Compass,
   Printer,
+  History,
 } from 'lucide-react';
 import { deliveriesApi, warehousesApi } from '../../services/api';
 import { CreateDeliveryModal } from '../deliveries/CreateDeliveryModal';
+import { DeliveryDetailDrawer } from '../deliveries/DeliveryDetailDrawer';
+import { DeliveryIncidentModal } from '../deliveries/DeliveryIncidentModal';
 import { generateRouteManifestPdf, type RouteManifestData } from '../../services/manifestPdf.service';
 import type { DeliveryRecord, DeliveryRecordStatus, Warehouse } from '../../types';
 
@@ -40,6 +43,11 @@ export const ShipmentsView: React.FC = () => {
 
   // UI Modals & Banners
   const [isCreateModalOpen, setIsCreateModalOpen] = useState<boolean>(false);
+  const [selectedDelivery, setSelectedDelivery] = useState<DeliveryRecord | null>(null);
+  const [incidentModalTarget, setIncidentModalTarget] = useState<{
+    delivery: DeliveryRecord;
+    status: 'failed' | 'cancelled';
+  } | null>(null);
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
   const [errorBanner, setErrorBanner] = useState<string | null>(null);
 
@@ -138,14 +146,51 @@ export const ShipmentsView: React.FC = () => {
   };
 
   // Quick Status change handler
-  const handleStatusChange = async (id: string, newStatus: DeliveryRecordStatus) => {
+  const handleStatusChange = async (delivery: DeliveryRecord, newStatus: DeliveryRecordStatus) => {
+    if (newStatus === 'failed' || newStatus === 'cancelled') {
+      setIncidentModalTarget({ delivery, status: newStatus });
+      return;
+    }
+
     try {
-      const updated = await deliveriesApi.updateStatus(id, newStatus, `Estado actualizado desde Envíos`);
-      setDeliveries((prev) => prev.map((d) => (d.id === id ? updated : d)));
+      const updated = await deliveriesApi.updateStatus(delivery.id, {
+        status: newStatus,
+        note: `Estado actualizado desde Envíos`,
+      });
+      setDeliveries((prev) => prev.map((d) => (d.id === delivery.id ? updated : d)));
+      if (selectedDelivery?.id === delivery.id) {
+        setSelectedDelivery(updated);
+      }
       setSuccessBanner(`Estado actualizado a: ${newStatus}`);
     } catch (err: any) {
       setErrorBanner(err.message || 'Error al actualizar el estado.');
     }
+  };
+
+  const handleIncidentModalSubmit = async (payload: {
+    status: DeliveryRecordStatus;
+    failureReason: string;
+    note?: string;
+  }) => {
+    if (!incidentModalTarget) return;
+    try {
+      const updated = await deliveriesApi.updateStatus(incidentModalTarget.delivery.id, payload);
+      setDeliveries((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+      if (selectedDelivery?.id === updated.id) {
+        setSelectedDelivery(updated);
+      }
+      setSuccessBanner(
+        `Novedad registrada para "${updated.customerName}": ${payload.failureReason}`,
+      );
+    } catch (err: any) {
+      setErrorBanner(err.message || 'Error al registrar la novedad.');
+      throw err;
+    }
+  };
+
+  const handleDrawerDeliveryUpdated = (updated: DeliveryRecord) => {
+    setDeliveries((prev) => prev.map((d) => (d.id === updated.id ? updated : d)));
+    setSelectedDelivery(updated);
   };
 
   // Callback on manual creation
@@ -429,6 +474,8 @@ export const ShipmentsView: React.FC = () => {
             { id: 'planned', label: 'Planificadas' },
             { id: 'in_transit', label: 'En Ruta' },
             { id: 'delivered', label: 'Entregadas' },
+            { id: 'failed', label: 'Fallidas' },
+            { id: 'cancelled', label: 'Canceladas' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -541,7 +588,12 @@ export const ShipmentsView: React.FC = () => {
                 </tr>
               ) : (
                 deliveries.map((delivery) => (
-                  <tr key={delivery.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors">
+                  <tr
+                    key={delivery.id}
+                    onClick={() => setSelectedDelivery(delivery)}
+                    className="hover:bg-slate-50/70 dark:hover:bg-slate-900/40 transition-colors cursor-pointer group"
+                    title="Click para ver trazabilidad y novedades"
+                  >
                     {/* Ref */}
                     <td className="py-2.5 px-3.5">
                       <span className="font-mono text-[11px] font-semibold text-slate-700 dark:text-slate-300 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
@@ -551,7 +603,7 @@ export const ShipmentsView: React.FC = () => {
 
                     {/* Customer */}
                     <td className="py-2.5 px-3.5">
-                      <div className="font-semibold text-slate-900 dark:text-white">
+                      <div className="font-semibold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {delivery.customerName}
                       </div>
                       {delivery.phone && (
@@ -608,13 +660,13 @@ export const ShipmentsView: React.FC = () => {
                     </td>
 
                     {/* Status with quick switcher */}
-                    <td className="py-2.5 px-3.5">
+                    <td className="py-2.5 px-3.5" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-1.5">
                         {getStatusBadge(delivery.status)}
                         <select
                           value={delivery.status}
                           onChange={(e) =>
-                            handleStatusChange(delivery.id, e.target.value as DeliveryRecordStatus)
+                            handleStatusChange(delivery, e.target.value as DeliveryRecordStatus)
                           }
                           className="text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-slate-700 rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer shadow-2xs"
                           title="Cambiar estado"
@@ -631,6 +683,9 @@ export const ShipmentsView: React.FC = () => {
                           <option value="delivered" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-medium">
                             Entregada
                           </option>
+                          <option value="failed" className="bg-white dark:bg-slate-900 text-rose-600 dark:text-rose-400 font-medium">
+                            Fallida
+                          </option>
                           <option value="cancelled" className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-medium">
                             Cancelada
                           </option>
@@ -639,16 +694,26 @@ export const ShipmentsView: React.FC = () => {
                     </td>
 
                     {/* Actions */}
-                    <td className="py-2.5 px-3.5 text-right">
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteDelivery(delivery.id, delivery.customerName)}
-                        disabled={isDeletingId === delivery.id}
-                        className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                        title="Eliminar orden"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                    <td className="py-2.5 px-3.5 text-right" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDelivery(delivery)}
+                          className="p-1 rounded text-slate-400 hover:text-blue-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                          title="Ver trazabilidad y auditoría"
+                        >
+                          <History className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteDelivery(delivery.id, delivery.customerName)}
+                          disabled={isDeletingId === delivery.id}
+                          className="p-1 rounded text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                          title="Eliminar orden"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -666,6 +731,25 @@ export const ShipmentsView: React.FC = () => {
         initialDate={deliveryDate}
         defaultWarehouse={warehouses[0] || null}
       />
+
+      {/* Delivery Detail & Traceability Drawer */}
+      <DeliveryDetailDrawer
+        isOpen={Boolean(selectedDelivery)}
+        onClose={() => setSelectedDelivery(null)}
+        delivery={selectedDelivery}
+        onDeliveryUpdated={handleDrawerDeliveryUpdated}
+      />
+
+      {/* Incident / Failure Modal (for table dropdown actions) */}
+      {incidentModalTarget && (
+        <DeliveryIncidentModal
+          isOpen={Boolean(incidentModalTarget)}
+          onClose={() => setIncidentModalTarget(null)}
+          delivery={incidentModalTarget.delivery}
+          targetStatus={incidentModalTarget.status}
+          onSubmit={handleIncidentModalSubmit}
+        />
+      )}
     </div>
   );
 };
