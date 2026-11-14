@@ -8,7 +8,18 @@ export type AppView =
   | 'fleet' 
   | 'shipments' 
   | 'analytics' 
-  | 'settings';
+  | 'settings'
+  | 'driver-mobile';
+
+export interface DriverUser {
+  id: string;
+  email: string;
+  fullName: string;
+  phone?: string;
+  role: 'driver';
+  isActive: boolean;
+  createdAt?: string;
+}
 
 export interface User {
   id: string;
@@ -101,6 +112,7 @@ export interface VehicleRecord {
   capacityKg: number;
   status: BackendVehicleStatus;
   driverId?: string;
+  driver?: DriverUser;
   createdAt?: string;
   updatedAt?: string;
 }

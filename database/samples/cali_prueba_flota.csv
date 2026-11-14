@@ -1,0 +1,13 @@
+cliente,direccion,telefono,latitud,longitud,peso_kg,tiempo_servicio_min,fecha_entrega,ventana_inicio,ventana_fin,referencia,notas
+Exito San Fernando,Calle 5 # 36-08,+573154001001,3.4318,-76.5412,180,10,2026-11-11,08:00,19:00,CALI-201,Entregar en muelle de carga trasera
+D1 Granada,Av 9N # 12-40,+573154001002,3.4565,-76.5332,95,8,2026-11-11,08:00,19:00,CALI-202,Preguntar por administrador turno tarde
+Jumbo Chipichape,Calle 38N # 6N-35,+573154001003,3.4752,-76.5284,240,15,2026-11-11,08:00,19:00,CALI-203,Ingreso por sótano puerta 2
+Olimpica Versalles,Av 5A Norte # 21-15,+573154001004,3.4625,-76.5305,120,10,2026-11-11,08:00,19:00,CALI-204,Mercancía frágil - manipular con cuidado
+Carulla San Antonio,Cra 10 # 2-30,+573154001005,3.4472,-76.5385,85,10,2026-11-11,08:00,19:00,CALI-205,Calle angosta estacionar en bahía
+Alkosto Pasoancho,Calle 13 # 80-25,+573154001006,3.3952,-76.5392,310,15,2026-11-11,08:00,20:00,CALI-206,Presentar remisión en portería norte
+Unicentro Cali,Cra 100 # 5-169,+573154001007,3.3765,-76.5388,210,12,2026-11-11,08:00,20:00,CALI-207,Local 142 zona comercial
+Jardin Plaza,Cra 98 # 16-200,+573154001008,3.3720,-76.5320,195,12,2026-11-11,08:00,20:00,CALI-208,Muelle sur - contactar al llegar
+Homecenter Norte,Calle 70 # 1-140,+573154001009,3.4890,-76.4975,175,15,2026-11-11,08:00,20:00,CALI-209,Recepción de proveedores puerta B
+Super Inter Centro,Carrera 10 # 10-35,+573154001010,3.4495,-76.5310,130,8,2026-11-11,08:00,19:00,CALI-210,Confirmar firma de recibido con sello
+Makro Valle del Lili,Cra 86 # 42-105,+573154001011,3.3685,-76.5250,225,15,2026-11-11,08:00,20:00,CALI-211,Carga paletizada bodega 1
+La 14 Calima,Calle 70 # 1-05,+573154001012,3.4785,-76.5020,140,10,2026-11-11,08:00,20:00,CALI-212,Entregar antes de cierre de patio

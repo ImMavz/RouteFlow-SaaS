@@ -6,14 +6,14 @@ WORKDIR /app
 # Dependencias + compilación
 FROM base AS build
 COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 COPY . .
 RUN pnpm run build
 
 # Solo dependencias de producción
 FROM base AS prod-deps
 COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Imagen final, liviana y sin root
 FROM node:24-alpine AS runtime

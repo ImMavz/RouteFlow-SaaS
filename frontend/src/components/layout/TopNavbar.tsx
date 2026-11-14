@@ -43,6 +43,7 @@ export const TopNavbar: React.FC<TopNavbarProps> = ({
     shipments: { title: 'Envíos & Órdenes', subtitle: 'Gestión de paquetes, ventanas horarias y albaranes' },
     analytics: { title: 'Costos & Eficiencia', subtitle: 'Kilometraje ahorrado, consumo de combustible y emisiones' },
     settings: { title: 'Configuración VRP', subtitle: 'Parámetros algorítmicos OR-Tools y perfiles de ruteo OSRM' },
+    'driver-mobile': { title: 'Modo Conductor', subtitle: 'Navegación de ruta en cabina y confirmación de entregas' },
   };
 
   const notifications = [

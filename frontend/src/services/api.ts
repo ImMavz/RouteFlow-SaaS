@@ -8,6 +8,7 @@ import type {
   OptimizationResponse,
   OptimizationRunRecord,
   BackendRoute,
+  DriverUser,
 } from '../types';
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -347,8 +348,46 @@ export const routesApi = {
     return request<BackendRoute>(`/routes/${routeId}`);
   },
 
+  getActiveDriverRoute: (): Promise<BackendRoute | null> => {
+    return request<BackendRoute | null>('/routes/driver/active');
+  },
+
+  updateStatus: (routeId: string, status: string): Promise<BackendRoute> => {
+    return request<BackendRoute>(`/routes/${routeId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+
   delete: (routeId: string): Promise<{ deleted: boolean; id: string; restoredDeliveries: number }> => {
     return request<{ deleted: boolean; id: string; restoredDeliveries: number }>(`/routes/${routeId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export interface CreateDriverPayload {
+  email: string;
+  fullName: string;
+  phone?: string;
+  password: string;
+}
+
+// 7. Users API (Conductores)
+export const usersApi = {
+  getDrivers: (): Promise<DriverUser[]> => {
+    return request<DriverUser[]>('/users/drivers');
+  },
+
+  createDriver: (payload: CreateDriverPayload): Promise<DriverUser> => {
+    return request<DriverUser>('/users/drivers', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+  },
+
+  deleteDriver: (id: string): Promise<{ deleted: boolean; id: string }> => {
+    return request<{ deleted: boolean; id: string }>(`/users/drivers/${id}`, {
       method: 'DELETE',
     });
   },

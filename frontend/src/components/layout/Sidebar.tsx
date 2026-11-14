@@ -12,7 +12,8 @@ import {
   MapPinned,
   ChevronLeft,
   ChevronRight,
-  Cpu
+  Cpu,
+  Smartphone,
 } from 'lucide-react';
 import type { AppView, User } from '../../types';
 import { RouteFlowLogo } from '../common/RouteFlowLogo';
@@ -87,6 +88,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: BarChart3,
       badge: undefined,
       badgeColor: undefined,
+    },
+    {
+      id: 'driver-mobile' as AppView,
+      label: 'Modo Conductor',
+      icon: Smartphone,
+      badge: 'Móvil',
+      badgeColor: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20',
     },
     {
       id: 'settings' as AppView,

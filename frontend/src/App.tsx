@@ -11,6 +11,7 @@ import { ShipmentsView } from './components/views/ShipmentsView';
 import { AnalyticsView } from './components/views/AnalyticsView';
 import { SettingsView } from './components/views/SettingsView';
 import { OsrmLabView } from './components/views/OsrmLabView';
+import { DriverMobileView } from './components/views/DriverMobileView';
 import { RouteMapPreview } from './components/dashboard/RouteMapPreview';
 import { NewRouteModal } from './components/dashboard/NewRouteModal';
 import { mockCurrentUser } from './data/mockData';
@@ -35,8 +36,13 @@ const AppContent: React.FC = () => {
         name: stored.fullName || prev.name,
         email: stored.email || prev.email,
         company: stored.companyId || prev.company,
+        role: (stored.role as any) || prev.role,
       }));
-      setCurrentView('dashboard');
+      if (stored.role === 'driver') {
+        setCurrentView('driver-mobile');
+      } else {
+        setCurrentView('dashboard');
+      }
     }
   }, []);
 
@@ -48,7 +54,12 @@ const AppContent: React.FC = () => {
         name: authUser.fullName,
         email: authUser.email,
         company: authUser.companyId,
+        role: (authUser.role as any) || prev.role,
       }));
+      if (authUser.role === 'driver') {
+        setCurrentView('driver-mobile');
+        return;
+      }
     }
     setCurrentView('dashboard');
   };
@@ -170,6 +181,10 @@ const AppContent: React.FC = () => {
           {currentView === 'settings' && (
             <SettingsView />
           )}
+
+          {currentView === 'driver-mobile' && (
+            <DriverMobileView />
+          )}
         </main>
       </div>
 
@@ -205,6 +220,7 @@ const QuickViewPill: React.FC<{
     { id: 'shipments', label: '8. Envíos & Paradas' },
     { id: 'analytics', label: '9. Analíticas & Costos' },
     { id: 'settings', label: '10. Configuración' },
+    { id: 'driver-mobile', label: '11. Modo Conductor (Móvil)' },
   ];
 
   return (

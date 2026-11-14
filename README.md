@@ -96,9 +96,9 @@ Proyecto desarrollado para la carrera de Ingenieria de Sistemas por:
    npm run start:dev
 
 4. Instalar dependencias del Motor Algoritmico y ejecutar:
-   cd ../engine
+   cd ../optimizer
    pip install -r requirements.txt
-   python main.py
+   uvicorn app.main:app --reload --port 8000
 
 5. Executar el Frontend:
    cd ../frontend

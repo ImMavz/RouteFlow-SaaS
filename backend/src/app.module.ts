@@ -10,12 +10,14 @@ import { DeliveriesModule } from './modules/deliveries/deliveries.module.js';
 import { OptimizationsModule } from './modules/optimizations/optimizations.module.js';
 import { RoutesModule } from './modules/routes/routes.module.js';
 import { AnalyticsModule } from './modules/analytics/analytics.module.js';
+import { UsersModule } from './modules/users/users.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
     AuthModule,
+    UsersModule,
     WarehousesModule,
     VehiclesModule,
     DeliveriesModule,

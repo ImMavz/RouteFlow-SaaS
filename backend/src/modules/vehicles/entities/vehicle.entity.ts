@@ -4,7 +4,10 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
+import { User } from '../../users/entities/user.entity.js';
 
 export type VehicleStatus = 'active' | 'maintenance' | 'inactive';
 
@@ -43,6 +46,10 @@ export class Vehicle {
 
   @Column({ name: 'driver_id', type: 'uuid', nullable: true })
   driverId?: string;
+
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
+  @JoinColumn({ name: 'driver_id' })
+  driver?: User;
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;

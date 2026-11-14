@@ -5,11 +5,62 @@ import { Route } from './entities/route.entity.js';
 import { RouteStop } from './entities/route-stop.entity.js';
 import { Delivery } from '../deliveries/entities/delivery.entity.js';
 import { DeliveryStatus } from '../../common/enums/delivery-status.enum.js';
+import { RouteStatus } from '../../common/enums/route-status.enum.js';
 import type { FilterRoutesDto } from './dto/filter-routes.dto.js';
 
 @Injectable()
 export class RoutesService {
   constructor(private readonly rlsService: RlsService) {}
+
+  async findActiveDriverRoute(
+    companyId: string,
+    driverId: string,
+  ): Promise<Route | null> {
+    return this.rlsService.runWithTenant(companyId, async (manager) => {
+      const route = await manager
+        .createQueryBuilder(Route, 'r')
+        .leftJoinAndSelect('r.vehicle', 'vehicle')
+        .leftJoinAndSelect('r.warehouse', 'warehouse')
+        .leftJoinAndSelect('r.driver', 'driver')
+        .leftJoinAndSelect('r.stops', 'stops')
+        .leftJoinAndSelect('stops.delivery', 'delivery')
+        .where('r.companyId = :companyId', { companyId })
+        .andWhere('(r.driverId = :driverId OR vehicle.driverId = :driverId)', {
+          driverId,
+        })
+        .andWhere('r.status IN (:...statuses)', {
+          statuses: [RouteStatus.PLANNED, RouteStatus.IN_PROGRESS],
+        })
+        .orderBy('r.routeDate', 'DESC')
+        .addOrderBy('stops.sequence', 'ASC')
+        .getOne();
+
+      return route || null;
+    });
+  }
+
+  async updateStatus(
+    companyId: string,
+    id: string,
+    status: RouteStatus,
+  ): Promise<Route> {
+    return this.rlsService.runWithTenant(companyId, async (manager) => {
+      const route = await manager.findOne(Route, {
+        where: { id, companyId },
+      });
+      if (!route) {
+        throw new NotFoundException(`Ruta con ID ${id} no encontrada`);
+      }
+      route.status = status;
+      if (status === RouteStatus.IN_PROGRESS && !route.startedAt) {
+        route.startedAt = new Date();
+      }
+      if (status === RouteStatus.COMPLETED) {
+        route.completedAt = new Date();
+      }
+      return manager.save(Route, route);
+    });
+  }
 
   async findAll(companyId: string, filter: FilterRoutesDto): Promise<Route[]> {
     return this.rlsService.runWithTenant(companyId, async (manager) => {

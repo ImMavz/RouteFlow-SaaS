@@ -65,6 +65,7 @@ export class VehiclesService {
     return this.rlsService.runWithTenant(companyId, async (manager) => {
       return manager.find(Vehicle, {
         where: { companyId },
+        relations: { driver: true },
         order: { createdAt: 'DESC' },
       });
     });
@@ -74,6 +75,7 @@ export class VehiclesService {
     return this.rlsService.runWithTenant(companyId, async (manager) => {
       const vehicle = await manager.findOne(Vehicle, {
         where: { id, companyId },
+        relations: { driver: true },
       });
       if (!vehicle) {
         throw new NotFoundException(`Vehículo con ID ${id} no encontrado`);

@@ -13,12 +13,15 @@ import {
   Loader2,
   CheckCircle2,
   Pencil,
+  User as UserIcon,
+  Phone,
+  Mail,
 } from 'lucide-react';
-import { vehiclesApi, warehousesApi } from '../../services/api';
-import type { VehicleRecord, Warehouse, BackendVehicleStatus } from '../../types';
+import { vehiclesApi, warehousesApi, usersApi } from '../../services/api';
+import type { VehicleRecord, Warehouse, BackendVehicleStatus, DriverUser } from '../../types';
 
 export const FleetView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'vehicles' | 'warehouses'>('vehicles');
+  const [activeTab, setActiveTab] = useState<'vehicles' | 'drivers' | 'warehouses'>('vehicles');
 
   // Vehicles state
   const [vehicles, setVehicles] = useState<VehicleRecord[]>([]);
@@ -26,6 +29,12 @@ export const FleetView: React.FC = () => {
   const [vehicleError, setVehicleError] = useState<string | null>(null);
   const [vehicleSearch, setVehicleSearch] = useState('');
   const [vehicleFilter, setVehicleFilter] = useState<'todos' | BackendVehicleStatus>('todos');
+
+  // Drivers state
+  const [drivers, setDrivers] = useState<DriverUser[]>([]);
+  const [isLoadingDrivers, setIsLoadingDrivers] = useState(true);
+  const [driverError, setDriverError] = useState<string | null>(null);
+  const [driverSearch, setDriverSearch] = useState('');
 
   // Warehouses state
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -35,6 +44,7 @@ export const FleetView: React.FC = () => {
 
   // Modals state
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+  const [isDriverModalOpen, setIsDriverModalOpen] = useState(false);
   const [isWarehouseModalOpen, setIsWarehouseModalOpen] = useState(false);
 
   // Vehicle form
@@ -42,8 +52,17 @@ export const FleetView: React.FC = () => {
   const [vehicleName, setVehicleName] = useState('');
   const [capacityKg, setCapacityKg] = useState<string>('1500');
   const [status, setStatus] = useState<BackendVehicleStatus>('active');
+  const [vehicleDriverId, setVehicleDriverId] = useState<string>('');
   const [submittingVehicle, setSubmittingVehicle] = useState(false);
   const [modalVehicleError, setModalVehicleError] = useState<string | null>(null);
+
+  // Driver form
+  const [driverFullName, setDriverFullName] = useState('');
+  const [driverEmail, setDriverEmail] = useState('');
+  const [driverPhone, setDriverPhone] = useState('');
+  const [driverPassword, setDriverPassword] = useState('');
+  const [submittingDriver, setSubmittingDriver] = useState(false);
+  const [modalDriverError, setModalDriverError] = useState<string | null>(null);
 
   // Warehouse form
   const [editingWarehouseId, setEditingWarehouseId] = useState<string | null>(null);
@@ -76,7 +95,21 @@ export const FleetView: React.FC = () => {
     }
   }, []);
 
-  // 2. Fetch Warehouses
+  // 2. Fetch Drivers
+  const fetchDrivers = useCallback(async () => {
+    setIsLoadingDrivers(true);
+    setDriverError(null);
+    try {
+      const data = await usersApi.getDrivers();
+      setDrivers(data);
+    } catch (err: any) {
+      setDriverError(err.message || 'Error al cargar los conductores');
+    } finally {
+      setIsLoadingDrivers(false);
+    }
+  }, []);
+
+  // 3. Fetch Warehouses
   const fetchWarehouses = useCallback(async () => {
     setIsLoadingWarehouses(true);
     setWarehouseError(null);
@@ -92,8 +125,9 @@ export const FleetView: React.FC = () => {
 
   useEffect(() => {
     fetchVehicles();
+    fetchDrivers();
     fetchWarehouses();
-  }, [fetchVehicles, fetchWarehouses]);
+  }, [fetchVehicles, fetchDrivers, fetchWarehouses]);
 
   // Create Vehicle Handler
   const handleCreateVehicle = async (e: React.FormEvent) => {
@@ -118,18 +152,78 @@ export const FleetView: React.FC = () => {
         name: vehicleName.trim() || undefined,
         capacityKg: cap,
         status,
+        driverId: vehicleDriverId || undefined,
       });
+      // Attach driver object if matched
+      if (vehicleDriverId) {
+        newVehicle.driver = drivers.find((d) => d.id === vehicleDriverId);
+      }
       setVehicles((prev) => [newVehicle, ...prev]);
       setIsVehicleModalOpen(false);
       setPlate('');
       setVehicleName('');
       setCapacityKg('1500');
       setStatus('active');
+      setVehicleDriverId('');
       showToast(`Vehículo ${cleanPlate} registrado con éxito`);
     } catch (err: any) {
       setModalVehicleError(err.message || 'Error al registrar vehículo');
     } finally {
       setSubmittingVehicle(false);
+    }
+  };
+
+  // Create Driver Handler
+  const handleCreateDriver = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setModalDriverError(null);
+
+    const email = driverEmail.trim().toLowerCase();
+    const fullName = driverFullName.trim();
+    if (!email || !fullName) {
+      setModalDriverError('Nombre y correo son obligatorios');
+      return;
+    }
+    if (driverPassword.length < 6) {
+      setModalDriverError('La contraseña debe tener mínimo 6 caracteres');
+      return;
+    }
+
+    setSubmittingDriver(true);
+    try {
+      const newDriver = await usersApi.createDriver({
+        email,
+        fullName,
+        phone: driverPhone.trim() || undefined,
+        password: driverPassword,
+      });
+      setDrivers((prev) => [newDriver, ...prev]);
+      setIsDriverModalOpen(false);
+      setDriverFullName('');
+      setDriverEmail('');
+      setDriverPhone('');
+      setDriverPassword('');
+      showToast(`Conductor ${fullName} creado con éxito`);
+    } catch (err: any) {
+      setModalDriverError(err.message || 'Error al crear conductor');
+    } finally {
+      setSubmittingDriver(false);
+    }
+  };
+
+  // Delete Driver Handler
+  const handleDeleteDriver = async (id: string, name: string) => {
+    if (!window.confirm(`¿Seguro que deseas eliminar el conductor "${name}"?`)) return;
+    try {
+      await usersApi.deleteDriver(id);
+      setDrivers((prev) => prev.filter((d) => d.id !== id));
+      // Clear driver from vehicles
+      setVehicles((prev) =>
+        prev.map((v) => (v.driverId === id ? { ...v, driverId: undefined, driver: undefined } : v)),
+      );
+      showToast(`Conductor "${name}" eliminado`);
+    } catch (err: any) {
+      alert(err.message || 'Error al eliminar conductor');
     }
   };
 
@@ -238,6 +332,16 @@ export const FleetView: React.FC = () => {
     return matchesFilter && matchesSearch;
   });
 
+  // Filtered drivers
+  const filteredDrivers = drivers.filter((d) => {
+    const q = driverSearch.toLowerCase();
+    return (
+      d.fullName.toLowerCase().includes(q) ||
+      d.email.toLowerCase().includes(q) ||
+      (d.phone && d.phone.toLowerCase().includes(q))
+    );
+  });
+
   // Filtered warehouses
   const filteredWarehouses = warehouses.filter((w) => {
     return (
@@ -261,23 +365,24 @@ export const FleetView: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-              Infraestructura Operativa
+              Gestión de Flota & Conductores
             </h2>
             <span className="px-1.5 py-0.5 rounded font-mono text-[10px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-              {vehicles.length} Vehículos · {warehouses.length} Hubs
+              {vehicles.length} Vehículos · {drivers.length} Conductores · {warehouses.length} Hubs
             </span>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Gestión de flota vehicular, capacidad de carga y centros de distribución para optimización VRP.
+            Administración de vehículos, choferes habilitados con app móvil y centros de despacho logístico.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          {activeTab === 'vehicles' ? (
+          {activeTab === 'vehicles' && (
             <button
               type="button"
               onClick={() => {
                 setModalVehicleError(null);
+                setVehicleDriverId('');
                 setIsVehicleModalOpen(true);
               }}
               className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
@@ -285,7 +390,27 @@ export const FleetView: React.FC = () => {
               <Plus className="w-3.5 h-3.5" />
               Registrar Vehículo
             </button>
-          ) : (
+          )}
+
+          {activeTab === 'drivers' && (
+            <button
+              type="button"
+              onClick={() => {
+                setModalDriverError(null);
+                setDriverFullName('');
+                setDriverEmail('');
+                setDriverPhone('');
+                setDriverPassword('');
+                setIsDriverModalOpen(true);
+              }}
+              className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center gap-1.5 cursor-pointer transition-colors shadow-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Registrar Conductor
+            </button>
+          )}
+
+          {activeTab === 'warehouses' && (
             <button
               type="button"
               onClick={() => {
@@ -321,6 +446,22 @@ export const FleetView: React.FC = () => {
           <span>Flota Vehicular</span>
           <span className="px-1.5 py-0.2 rounded font-mono text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
             {vehicles.length}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('drivers')}
+          className={`flex items-center gap-2 px-3.5 py-2 text-xs font-medium border-b-2 transition-colors cursor-pointer ${
+            activeTab === 'drivers'
+              ? 'border-blue-600 text-blue-600 dark:text-blue-400 font-semibold'
+              : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+          }`}
+        >
+          <UserIcon className="w-3.5 h-3.5" />
+          <span>Conductores</span>
+          <span className="px-1.5 py-0.2 rounded font-mono text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+            {drivers.length}
           </span>
         </button>
 
@@ -501,6 +642,18 @@ export const FleetView: React.FC = () => {
                           {Number(vehicle.capacityKg).toLocaleString()} kg
                         </span>
                       </div>
+
+                      <div className="flex items-center justify-between text-slate-700 dark:text-slate-300">
+                        <span className="flex items-center gap-1.5 text-slate-500 text-[11px]">
+                          <UserIcon className="w-3.5 h-3.5 text-indigo-500" />
+                          Conductor:
+                        </span>
+                        <span className="font-medium text-slate-900 dark:text-white text-xs truncate max-w-[130px]">
+                          {vehicle.driver?.fullName ||
+                            drivers.find((d) => d.id === vehicle.driverId)?.fullName ||
+                            'Sin asignar'}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -524,7 +677,184 @@ export const FleetView: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: WAREHOUSES */}
+      {/* TAB 2: DRIVERS */}
+      {activeTab === 'drivers' && (
+        <div className="space-y-3">
+          {/* Controls: Search and Refresh */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Personal de conducción registrado para operar la app móvil de despacho y confirmación en ruta.
+            </p>
+
+            <div className="flex items-center gap-2">
+              <div className="relative w-full sm:w-64">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={driverSearch}
+                  onChange={(e) => setDriverSearch(e.target.value)}
+                  placeholder="Buscar por nombre, correo o teléfono..."
+                  className="w-full pl-8 pr-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={fetchDrivers}
+                title="Refrescar lista de conductores"
+                className="p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingDrivers ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {driverError && (
+            <div className="p-3 rounded-lg border border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-400 text-xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{driverError}</span>
+              </div>
+              <button
+                type="button"
+                onClick={fetchDrivers}
+                className="text-xs font-semibold underline cursor-pointer"
+              >
+                Reintentar
+              </button>
+            </div>
+          )}
+
+          {/* Loading Skeletons */}
+          {isLoadingDrivers && drivers.length === 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="p-4 rounded-lg bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 animate-pulse space-y-3"
+                >
+                  <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
+                  <div className="h-3 bg-slate-100 dark:bg-slate-800/60 rounded w-3/4" />
+                </div>
+              ))}
+            </div>
+          ) : filteredDrivers.length === 0 ? (
+            /* Empty State */
+            <div className="p-10 rounded-lg bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 text-center flex flex-col items-center justify-center space-y-2.5">
+              <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">
+                <UserIcon className="w-5 h-5" />
+              </div>
+              <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                {driverSearch
+                  ? 'No se encontraron conductores con los términos ingresados'
+                  : 'Sin conductores registrados en el sistema'}
+              </h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-sm">
+                Registra a tus conductores para que puedan ingresar a la vista móvil con sus credenciales y navegar sus rutas en tiempo real.
+              </p>
+              {!driverSearch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModalDriverError(null);
+                    setDriverFullName('');
+                    setDriverEmail('');
+                    setDriverPhone('');
+                    setDriverPassword('');
+                    setIsDriverModalOpen(true);
+                  }}
+                  className="mt-2 px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  Registrar Primer Conductor
+                </button>
+              )}
+            </div>
+          ) : (
+            /* Drivers Grid */
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredDrivers.map((driver) => {
+                const assignedVehicle = vehicles.find((v) => v.driverId === driver.id);
+                return (
+                  <div
+                    key={driver.id}
+                    className="p-3.5 rounded-lg bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 flex flex-col justify-between hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
+                  >
+                    <div>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-full bg-indigo-500/10 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs uppercase border border-indigo-500/20">
+                            {driver.fullName.slice(0, 2)}
+                          </div>
+                          <div>
+                            <span className="font-semibold text-xs text-slate-900 dark:text-white">
+                              {driver.fullName}
+                            </span>
+                            <span className="block text-[10px] text-slate-400 font-mono">
+                              Rol: Chofer de Ruta
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className="text-[10px] px-2 py-0.5 rounded-md font-medium border bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20">
+                          {driver.isActive ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </div>
+
+                      <div className="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 space-y-1.5 text-xs">
+                        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 text-xs">
+                          <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span className="truncate">{driver.email}</span>
+                        </div>
+
+                        {driver.phone && (
+                          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 text-xs">
+                            <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span>{driver.phone}</span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-800 text-xs">
+                          <span className="flex items-center gap-1.5 text-slate-500 text-[11px]">
+                            <Truck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                            Vehículo asignado:
+                          </span>
+                          {assignedVehicle ? (
+                            <span className="font-mono font-bold text-xs text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+                              {assignedVehicle.plate}
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-[11px] italic">
+                              Sin asignar
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                      <span className="text-[10px] font-mono text-slate-400">
+                        ID: {driver.id.slice(0, 8)}...
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteDriver(driver.id, driver.fullName)}
+                        title="Eliminar conductor"
+                        className="p-1 rounded text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 3: WAREHOUSES */}
       {activeTab === 'warehouses' && (
         <div className="space-y-3">
           {/* Controls: Search and Refresh */}
@@ -774,6 +1104,24 @@ export const FleetView: React.FC = () => {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Conductor Asignado (opcional)
+                </label>
+                <select
+                  value={vehicleDriverId}
+                  onChange={(e) => setVehicleDriverId(e.target.value)}
+                  className="w-full px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                >
+                  <option value="">-- Sin conductor asignado --</option>
+                  {drivers.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.fullName} ({d.email})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
                 <button
                   type="button"
@@ -930,6 +1278,115 @@ export const FleetView: React.FC = () => {
                 >
                   {submittingWarehouse && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   {editingWarehouseId ? 'Actualizar Bodega' : 'Guardar Bodega'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: REGISTRAR CONDUCTOR */}
+      {isDriverModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg w-full max-w-md p-5 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <UserIcon className="w-4 h-4 text-blue-600" />
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  Registrar Nuevo Conductor
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDriverModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {modalDriverError && (
+              <div className="p-2.5 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-600 dark:text-rose-400 text-xs flex items-center gap-2">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                <span>{modalDriverError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleCreateDriver} className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Nombre Completo <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={driverFullName}
+                  onChange={(e) => setDriverFullName(e.target.value)}
+                  placeholder="Ej. Carlos Mario Rodríguez"
+                  className="w-full px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Correo Electrónico (Login) <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={driverEmail}
+                  onChange={(e) => setDriverEmail(e.target.value)}
+                  placeholder="Ej. carlos.conductor@routeflow.com"
+                  className="w-full px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs font-mono focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Teléfono Móvil (opcional)
+                </label>
+                <input
+                  type="tel"
+                  value={driverPhone}
+                  onChange={(e) => setDriverPhone(e.target.value)}
+                  placeholder="Ej. +57 315 889 0123"
+                  className="w-full px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Contraseña de Acceso <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  required
+                  minLength={6}
+                  value={driverPassword}
+                  onChange={(e) => setDriverPassword(e.target.value)}
+                  placeholder="Mínimo 6 caracteres"
+                  className="w-full px-2.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                />
+                <span className="text-[10px] text-slate-400 mt-0.5 block">
+                  El conductor usará este correo y clave para ingresar a la vista móvil desde su celular.
+                </span>
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsDriverModalOpen(false)}
+                  className="px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingDriver}
+                  className="px-3.5 py-1.5 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {submittingDriver && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  Guardar Conductor
                 </button>
               </div>
             </form>
