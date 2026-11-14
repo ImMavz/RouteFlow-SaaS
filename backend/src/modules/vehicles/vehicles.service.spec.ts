@@ -82,5 +82,45 @@ describe('VehiclesService', () => {
 
     await expect(service.findOne('tenant-1', 'bad-id')).rejects.toThrow(NotFoundException);
   });
+
+  it('debe actualizar telemetría GPS del vehículo', async () => {
+    const existingVehicle = {
+      id: 'veh-1',
+      companyId: 'tenant-1',
+      plate: 'KKK-777',
+      currentLat: undefined,
+      currentLng: undefined,
+    };
+    mockEntityManager.findOne.mockResolvedValue(existingVehicle);
+
+    const updated = await service.updateTelemetry('tenant-1', 'veh-1', {
+      lat: 3.4516,
+      lng: -76.532,
+      speedKmh: 42.5,
+      heading: 180,
+    });
+
+    expect(updated.currentLat).toBe(3.4516);
+    expect(updated.currentLng).toBe(-76.532);
+    expect(updated.speedKmh).toBe(42.5);
+    expect(updated.heading).toBe(180);
+    expect(updated.lastTelemetryAt).toBeInstanceOf(Date);
+  });
+
+  it('debe listar vehículos activos con telemetría en vivo', async () => {
+    mockEntityManager.find.mockResolvedValue([
+      { id: 'veh-1', plate: 'KKK-777', currentLat: 3.45, currentLng: -76.53 },
+    ]);
+
+    const liveVehicles = await service.getLiveTracking('tenant-1');
+    expect(liveVehicles).toHaveLength(1);
+    expect(mockEntityManager.find).toHaveBeenCalledWith(
+      Vehicle,
+      expect.objectContaining({
+        where: { companyId: 'tenant-1', status: 'active' },
+        relations: { driver: true },
+      }),
+    );
+  });
 });
 

@@ -51,6 +51,61 @@ export class Vehicle {
   @JoinColumn({ name: 'driver_id' })
   driver?: User;
 
+  @Column({
+    name: 'current_lat',
+    type: 'numeric',
+    precision: 10,
+    scale: 6,
+    nullable: true,
+    transformer: {
+      to: (value?: number | null) => value,
+      from: (value?: string | number | null) => (value != null ? Number(value) : undefined),
+    },
+  })
+  currentLat?: number;
+
+  @Column({
+    name: 'current_lng',
+    type: 'numeric',
+    precision: 10,
+    scale: 6,
+    nullable: true,
+    transformer: {
+      to: (value?: number | null) => value,
+      from: (value?: string | number | null) => (value != null ? Number(value) : undefined),
+    },
+  })
+  currentLng?: number;
+
+  @Column({
+    name: 'speed_kmh',
+    type: 'numeric',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (value?: number | null) => value,
+      from: (value?: string | number | null) => (value != null ? Number(value) : undefined),
+    },
+  })
+  speedKmh?: number;
+
+  @Column({
+    name: 'heading',
+    type: 'numeric',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    transformer: {
+      to: (value?: number | null) => value,
+      from: (value?: string | number | null) => (value != null ? Number(value) : undefined),
+    },
+  })
+  heading?: number;
+
+  @Column({ name: 'last_telemetry_at', type: 'timestamptz', nullable: true })
+  lastTelemetryAt?: Date;
+
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   createdAt: Date;
 

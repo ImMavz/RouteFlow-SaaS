@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Truck,
   MapPin,
@@ -14,12 +14,13 @@ import {
   Loader2,
   Check,
   Send,
+  Radio,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-import { routesApi, deliveriesApi } from '../../services/api';
+import { routesApi, deliveriesApi, vehiclesApi } from '../../services/api';
 import { fetchRouteLegsStreetGeometry, type RouteLegDetail } from '../../services/osrm';
 import type { BackendRoute, BackendRouteStop } from '../../types';
 
@@ -76,15 +77,30 @@ const createStopMarkerIcon = (
   });
 };
 
+const createDriverGpsMarkerIcon = (heading?: number) =>
+  L.divIcon({
+    className: 'rf-driver-gps-icon',
+    html: `
+      <div style="position: relative; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">
+        <span style="position: absolute; width: 32px; height: 32px; border-radius: 50%; background: rgba(37, 99, 235, 0.35); animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></span>
+        <span style="position: absolute; width: 18px; height: 18px; border-radius: 50%; background: #2563eb; border: 3px solid #ffffff; box-shadow: 0 0 12px rgba(37,99,235,0.9);"></span>
+        ${heading != null && heading >= 0 ? `<div style="position: absolute; top: -6px; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; border-bottom: 9px solid #1d4ed8; transform: rotate(${heading}deg); transform-origin: 50% 22px;"></div>` : ''}
+      </div>`,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+  });
+
 function MapController({
   focusCenter,
   activeCoordinates,
   allCoordinates,
+  driverCoords,
   mode,
 }: {
   focusCenter: [number, number] | null;
   activeCoordinates: [number, number][];
   allCoordinates: [number, number][];
+  driverCoords?: [number, number] | null;
   mode: 'focus' | 'all';
 }) {
   const map = useMap();
@@ -94,12 +110,19 @@ function MapController({
       return;
     }
 
-    const targetCoords =
-      mode === 'focus' && activeCoordinates && activeCoordinates.length > 1
-        ? activeCoordinates
-        : allCoordinates;
+    const baseCoords =
+      mode === 'focus' && activeCoordinates && activeCoordinates.length > 0
+        ? [...activeCoordinates]
+        : [...allCoordinates];
 
-    if (targetCoords && targetCoords.length > 0) {
+    const targetCoords: [number, number][] = [...baseCoords];
+    if (driverCoords && baseCoords.length > 0) {
+      targetCoords.push(driverCoords);
+    } else if (driverCoords && baseCoords.length === 0) {
+      targetCoords.push(driverCoords);
+    }
+
+    if (targetCoords.length > 0) {
       if (targetCoords.length === 1) {
         map.setView(targetCoords[0], 15, { animate: true });
       } else {
@@ -110,7 +133,7 @@ function MapController({
         });
       }
     }
-  }, [focusCenter, activeCoordinates, allCoordinates, mode, map]);
+  }, [focusCenter, activeCoordinates, allCoordinates, driverCoords, mode, map]);
   return null;
 }
 
@@ -139,6 +162,24 @@ export const DriverMobileView: React.FC = () => {
 
   // Success celebration
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [gpsStatus, setGpsStatus] = useState<
+    'locating' | 'active' | 'denied' | 'unavailable' | 'timeout'
+  >('locating');
+  const [gpsErrorMessage, setGpsErrorMessage] = useState<string | null>(null);
+  const [driverGps, setDriverGps] = useState<{
+    coords: [number, number];
+    heading?: number;
+    speedKmh?: number;
+    accuracy?: number;
+  } | null>(null);
+
+  const hasRealGps = useRef(false);
+  const latestGpsRef = useRef<{
+    lat: number;
+    lng: number;
+    speedKmh?: number;
+    heading?: number;
+  } | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -180,6 +221,133 @@ export const DriverMobileView: React.FC = () => {
       ) || null
     );
   }, [sortedStops, selectedStopId]);
+
+  // Periodic & Real GPS Telemetry transmission to Backend Dispatcher
+  useEffect(() => {
+    const vehicleId = route?.vehicleId || route?.vehicle?.id;
+
+    let watchId: number | null = null;
+    let heartbeatInterval: any = null;
+
+    const transmitLocation = async (lat: number, lng: number, speed?: number, heading?: number) => {
+      if (!vehicleId || !isFinite(lat) || !isFinite(lng) || lat === 0) return;
+      try {
+        await vehiclesApi.updateTelemetry(vehicleId, {
+          lat,
+          lng,
+          speedKmh: speed != null && speed >= 0 ? Math.round(speed * 3.6) : 30,
+          heading: heading != null && heading >= 0 ? Math.round(heading) : undefined,
+        });
+      } catch (err) {
+        console.warn('Fallo transmitiendo telemetría:', err);
+      }
+    };
+
+    const handleSuccess = (pos: GeolocationPosition) => {
+      hasRealGps.current = true;
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const speed = pos.coords.speed;
+      const heading = pos.coords.heading;
+      const accuracy = pos.coords.accuracy;
+
+      setGpsStatus('active');
+      setGpsErrorMessage(null);
+
+      const speedKmh = speed != null && speed >= 0 ? Math.round(speed * 3.6) : undefined;
+      const headingDeg = heading != null && heading >= 0 ? Math.round(heading) : undefined;
+
+      setDriverGps({
+        coords: [lat, lng],
+        heading: headingDeg,
+        speedKmh,
+        accuracy: accuracy ? Math.round(accuracy) : undefined,
+      });
+
+      latestGpsRef.current = {
+        lat,
+        lng,
+        speedKmh,
+        heading: headingDeg,
+      };
+
+      if (vehicleId) {
+        transmitLocation(lat, lng, speed ?? undefined, heading ?? undefined);
+      }
+    };
+
+    const handleError = (err: GeolocationPositionError) => {
+      console.warn('GPS browser error:', err.code, err.message);
+      if (err.code === 1) {
+        setGpsStatus('denied');
+        setGpsErrorMessage('Permiso de GPS denegado. Habilítalo en el navegador.');
+      } else if (err.code === 2) {
+        setGpsStatus('unavailable');
+        setGpsErrorMessage('Ubicación no disponible. Verifica que el GPS de tu teléfono esté encendido.');
+      } else if (err.code === 3 && !hasRealGps.current) {
+        setGpsStatus('timeout');
+        setGpsErrorMessage('Buscando satélites GPS...');
+      }
+    };
+
+    if ('geolocation' in navigator) {
+      // 1. Instant coarse/cached fix (cellular/wifi)
+      navigator.geolocation.getCurrentPosition(handleSuccess, () => {}, {
+        enableHighAccuracy: false,
+        maximumAge: 60000,
+        timeout: 8000,
+      });
+
+      // 2. High-accuracy live continuous tracking
+      watchId = navigator.geolocation.watchPosition(handleSuccess, handleError, {
+        enableHighAccuracy: true,
+        maximumAge: 5000,
+        timeout: 25000,
+      });
+    } else {
+      setGpsStatus('unavailable');
+      setGpsErrorMessage('Geolocalización no soportada en este navegador.');
+    }
+
+    // Immediately transmit if GPS coordinates were already captured before vehicle loaded
+    if (vehicleId && latestGpsRef.current) {
+      transmitLocation(
+        latestGpsRef.current.lat,
+        latestGpsRef.current.lng,
+        latestGpsRef.current.speedKmh,
+        latestGpsRef.current.heading,
+      );
+    }
+
+    // Continuous 5s telemetry heartbeat to Admin Tower / Dispatcher
+    heartbeatInterval = setInterval(() => {
+      if (!vehicleId) return;
+
+      if (latestGpsRef.current) {
+        transmitLocation(
+          latestGpsRef.current.lat,
+          latestGpsRef.current.lng,
+          latestGpsRef.current.speedKmh ?? 0,
+          latestGpsRef.current.heading,
+        );
+      } else if (!hasRealGps.current) {
+        if (currentStop?.delivery?.lat && currentStop?.delivery?.lng) {
+          transmitLocation(Number(currentStop.delivery.lat), Number(currentStop.delivery.lng), 28);
+        } else if (route?.warehouse?.lat && route?.warehouse?.lng) {
+          transmitLocation(Number(route.warehouse.lat), Number(route.warehouse.lng), 0);
+        }
+      }
+    }, 5000);
+
+    return () => {
+      if (watchId !== null && 'geolocation' in navigator) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+      }
+    };
+  }, [route?.vehicleId, route?.vehicle?.id, route?.warehouse, currentStop]);
 
   // Stats calculation
   const totalStops = sortedStops.length;
@@ -504,6 +672,34 @@ export const DriverMobileView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-1.5">
+            {/* GPS Telemetry Indicator */}
+            {gpsStatus === 'active' && driverGps ? (
+              <button
+                type="button"
+                onClick={() => setFocusCenter(driverGps.coords)}
+                className="flex items-center gap-1 text-[10px] text-emerald-700 dark:text-emerald-300 font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 cursor-pointer hover:bg-emerald-500/25 transition-all"
+                title={`GPS en vivo (±${driverGps.accuracy || 10}m). Clic para centrar en mi posición.`}
+              >
+                <Radio className="w-3 h-3 text-emerald-500 animate-pulse" />
+                GPS Activo {driverGps.accuracy ? `(±${driverGps.accuracy}m)` : ''}
+              </button>
+            ) : gpsStatus === 'locating' || gpsStatus === 'timeout' ? (
+              <span
+                className="flex items-center gap-1 text-[10px] text-amber-600 dark:text-amber-400 font-mono px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/20"
+                title="Buscando señal de satélite GPS..."
+              >
+                <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
+                Buscando GPS...
+              </span>
+            ) : (
+              <span
+                className="flex items-center gap-1 text-[10px] text-rose-600 dark:text-rose-400 font-mono px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/20"
+                title={gpsErrorMessage || 'Activa la ubicación en tu teléfono'}
+              >
+                <Radio className="w-3 h-3 text-rose-500" />
+                Sin GPS
+              </span>
+            )}
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${
                 route.status === 'in_progress'
@@ -564,6 +760,40 @@ export const DriverMobileView: React.FC = () => {
         )}
       </div>
 
+      {/* GPS Warning Banner if permission denied or unavailable */}
+      {gpsErrorMessage && (gpsStatus === 'denied' || gpsStatus === 'unavailable') && (
+        <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-between text-xs text-amber-800 dark:text-amber-300">
+          <div className="flex items-center gap-2">
+            <Radio className="w-4 h-4 text-amber-500 shrink-0" />
+            <span>{gpsErrorMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              if ('geolocation' in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                  (pos) => {
+                    setGpsStatus('active');
+                    setGpsErrorMessage(null);
+                    setDriverGps({
+                      coords: [pos.coords.latitude, pos.coords.longitude],
+                      accuracy: pos.coords.accuracy ? Math.round(pos.coords.accuracy) : undefined,
+                    });
+                  },
+                  (err) => {
+                    setGpsErrorMessage(err.message);
+                  },
+                  { enableHighAccuracy: true, timeout: 15000 },
+                );
+              }
+            }}
+            className="text-[10px] font-semibold underline text-amber-700 dark:text-amber-300 shrink-0 cursor-pointer"
+          >
+            Reintentar
+          </button>
+        </div>
+      )}
+
       {/* Interactive Mobile Map */}
       <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 h-80 sm:h-96 w-full relative shadow-xs">
         <MapContainer
@@ -581,6 +811,7 @@ export const DriverMobileView: React.FC = () => {
             focusCenter={focusCenter}
             activeCoordinates={activeLegCoordinates}
             allCoordinates={finalRouteCoordinates}
+            driverCoords={driverGps?.coords}
             mode={mapViewMode}
           />
 
@@ -638,6 +869,25 @@ export const DriverMobileView: React.FC = () => {
               </Marker>
             );
           })}
+
+          {/* Driver's Live Real-Time GPS Location Marker */}
+          {driverGps && (
+            <Marker
+              position={driverGps.coords}
+              icon={createDriverGpsMarkerIcon(driverGps.heading)}
+              zIndexOffset={1000}
+            >
+              <Popup>
+                <div className="text-xs font-sans">
+                  <strong className="text-blue-600 block">Mi Ubicación en Vivo</strong>
+                  <p className="text-slate-600 font-medium">
+                    {driverGps.speedKmh ? `${driverGps.speedKmh} km/h` : 'Detenido'}
+                    {driverGps.accuracy ? ` (Precisión: ±${driverGps.accuracy}m)` : ''}
+                  </p>
+                </div>
+              </Popup>
+            </Marker>
+          )}
 
           {/* 1. COMPLETED LEGS (Subtle emerald/slate dashed line) */}
           {mapViewMode === 'all' &&
@@ -779,19 +1029,29 @@ export const DriverMobileView: React.FC = () => {
           </div>
         </div>
 
-        {/* Floating Re-center / Reset action */}
-        {focusCenter && (
-          <div className="absolute bottom-2 right-2 z-[400]">
+        {/* Floating Actions: Mi GPS & Ver Ruta */}
+        <div className="absolute bottom-2 right-2 z-[400] flex items-center gap-1.5">
+          {driverGps && (
+            <button
+              type="button"
+              onClick={() => setFocusCenter(driverGps.coords)}
+              className="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold shadow-md flex items-center gap-1 cursor-pointer transition-transform active:scale-95"
+              title="Centrar mapa en mi ubicación GPS"
+            >
+              <Navigation className="w-3.5 h-3.5 text-white" />
+              Mi GPS
+            </button>
+          )}
+          {focusCenter && (
             <button
               type="button"
               onClick={() => setFocusCenter(null)}
-              className="px-2.5 py-1 rounded-lg bg-blue-600 text-white text-[10px] font-semibold shadow-md flex items-center gap-1 hover:bg-blue-700 cursor-pointer"
+              className="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-semibold shadow-md flex items-center gap-1 cursor-pointer transition-transform active:scale-95"
             >
-              <Navigation className="w-3 h-3" />
-              Re-centrar
+              Ver Ruta
             </button>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Legend for Ruta Completa */}
         {mapViewMode === 'all' && enrichedLegs.length > 0 && (

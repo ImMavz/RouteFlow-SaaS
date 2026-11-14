@@ -75,11 +75,23 @@ CREATE TABLE vehicles (
   capacity_kg  numeric(10,2) NOT NULL CHECK (capacity_kg > 0),
   status       vehicle_status NOT NULL DEFAULT 'active',
   driver_id    uuid REFERENCES users(id) ON DELETE SET NULL,  -- conductor habitual (opcional)
+  current_lat        numeric(10,6),
+  current_lng        numeric(10,6),
+  speed_kmh          numeric(5,2),
+  heading            numeric(5,2),
+  last_telemetry_at  timestamptz,
   created_at   timestamptz NOT NULL DEFAULT now(),
   updated_at   timestamptz NOT NULL DEFAULT now(),
   UNIQUE (company_id, plate)
 );
 CREATE INDEX vehicles_company_idx ON vehicles (company_id);
+
+-- Idempotent migrations for existing deployments
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS current_lat numeric(10,6);
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS current_lng numeric(10,6);
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS speed_kmh numeric(5,2);
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS heading numeric(5,2);
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS last_telemetry_at timestamptz;
 
 -- ---------- Cargas de CSV (para mostrar errores por fila) ----------
 CREATE TABLE csv_imports (

@@ -1,6 +1,7 @@
 /**
  * OSRM Routing & Geo Utilities
- * Connects to local or remote OSRM engine to retrieve street-level road geometry
+ * Connects to local or remote OSRM engine to retrieve street-level road geometry.
+ * Includes automatic fallback to public OSRM when local Docker/Vite proxy is unreachable.
  */
 
 export interface OsrmRouteGeometryResult {
@@ -32,55 +33,99 @@ export function calculateDistanceKm(
 }
 
 /**
+ * Returns OSRM base URL.
+ * In browser contexts (HTTPS tunnel, mobile, local), using relative '/osrm'
+ * avoids Mixed Content security blocks and points directly to the backend/Vite proxy.
+ */
+export function getDefaultOsrmUrl(): string {
+  if (typeof window !== 'undefined') {
+    return (import.meta as any).env?.VITE_OSRM_URL || '/osrm';
+  }
+  return 'http://localhost:5000';
+}
+
+/**
+ * Internal helper to query a single pair of coordinates against candidate OSRM hosts.
+ */
+async function fetchOsrmPair(
+  candidates: string[],
+  p1: [number, number],
+  p2: [number, number],
+): Promise<{ coordinates: [number, number][]; distance?: number; duration?: number } | null> {
+  for (const base of candidates) {
+    try {
+      const clean = base.replace(/\/$/, '');
+      const url = `${clean}/route/v1/driving/${p1[1]},${p1[0]};${p2[1]},${p2[0]}?overview=full&geometries=geojson`;
+      const res = await fetch(url);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.code === 'Ok' && data.routes?.[0]?.geometry?.coordinates?.length) {
+          const coords: [number, number][] = data.routes[0].geometry.coordinates.map(
+            ([lon, lat]: [number, number]) => [lat, lon],
+          );
+          return {
+            coordinates: coords,
+            distance: data.routes[0].distance,
+            duration: data.routes[0].duration,
+          };
+        }
+      }
+    } catch {
+      // Try next candidate
+    }
+  }
+  return null;
+}
+
+/**
  * Queries OSRM /route endpoint to fetch realistic turn-by-turn road geometry.
  * Returns Leaflet [lat, lng] coordinates following street curves.
- * If multi-point query fails, attempts pair-by-pair legs before falling back.
+ * If multi-point query fails, attempts pair-by-pair legs with public OSRM fallback.
  */
 export async function fetchRouteStreetGeometry(
   waypoints: [number, number][],
-  osrmUrl = 'http://localhost:5000',
+  osrmUrl = getDefaultOsrmUrl(),
 ): Promise<[number, number][]> {
   if (waypoints.length < 2) return waypoints;
 
-  const cleanUrl = osrmUrl.replace(/\/$/, '');
+  const candidateBases = Array.from(
+    new Set([osrmUrl.replace(/\/$/, ''), '/osrm', 'https://router.project-osrm.org']),
+  ).filter(Boolean);
+
+  const coordString = waypoints.map(([lat, lng]) => `${lng},${lat}`).join(';');
 
   // 1. Intentar ruta completa en un solo llamado
-  try {
-    const coordString = waypoints.map(([lat, lng]) => `${lng},${lat}`).join(';');
-    const endpoint = `${cleanUrl}/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
-    const res = await fetch(endpoint);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.code === 'Ok' && data.routes?.[0]?.geometry?.coordinates?.length) {
-        return data.routes[0].geometry.coordinates.map(
-          ([lon, lat]: [number, number]) => [lat, lon],
-        );
-      }
-    }
-  } catch (err) {
-    console.warn('Traza OSRM completa falló, intentando por tramos:', err);
-  }
-
-  // 2. Fallback tramo a tramo (par a par) para máxima tolerancia
-  try {
-    const fullTrack: [number, number][] = [];
-    for (let i = 0; i < waypoints.length - 1; i++) {
-      const p1 = waypoints[i];
-      const p2 = waypoints[i + 1];
-      const legUrl = `${cleanUrl}/route/v1/driving/${p1[1]},${p1[0]};${p2[1]},${p2[0]}?overview=full&geometries=geojson`;
-      const legRes = await fetch(legUrl);
-      if (legRes.ok) {
-        const legData = await legRes.json();
-        if (legData.code === 'Ok' && legData.routes?.[0]?.geometry?.coordinates?.length) {
-          const legCoords: [number, number][] = legData.routes[0].geometry.coordinates.map(
+  for (const base of candidateBases) {
+    try {
+      const endpoint = `${base}/route/v1/driving/${coordString}?overview=full&geometries=geojson`;
+      const res = await fetch(endpoint);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.code === 'Ok' && data.routes?.[0]?.geometry?.coordinates?.length) {
+          return data.routes[0].geometry.coordinates.map(
             ([lon, lat]: [number, number]) => [lat, lon],
           );
-          fullTrack.push(...legCoords);
-          continue;
         }
       }
-      fullTrack.push(p1, p2);
+    } catch {
+      // Probar siguiente base
     }
+  }
+
+  // 2. Fallback paralelo tramo a tramo (par a par)
+  try {
+    const legPromises = Array.from({ length: waypoints.length - 1 }, (_, i) =>
+      fetchOsrmPair(candidateBases, waypoints[i], waypoints[i + 1]),
+    );
+    const pairResults = await Promise.all(legPromises);
+    const fullTrack: [number, number][] = [];
+    pairResults.forEach((res, i) => {
+      if (res && res.coordinates.length > 0) {
+        fullTrack.push(...res.coordinates);
+      } else {
+        fullTrack.push(waypoints[i], waypoints[i + 1]);
+      }
+    });
     if (fullTrack.length > 0) {
       return fullTrack;
     }
@@ -101,101 +146,94 @@ export interface RouteLegDetail {
 }
 
 /**
- * Queries OSRM /route endpoint with steps=true to fetch street geometry broken down by leg.
+ * Queries OSRM /route endpoint to fetch street geometry broken down by leg.
  * Each leg represents the turn-by-turn road connection between two consecutive waypoints.
+ * If multi-point steps fail, uses parallel pairwise queries with automatic fallback.
  */
 export async function fetchRouteLegsStreetGeometry(
   waypoints: [number, number][],
-  osrmUrl = 'http://localhost:5000',
+  osrmUrl = getDefaultOsrmUrl(),
 ): Promise<RouteLegDetail[]> {
   if (waypoints.length < 2) return [];
 
-  const cleanUrl = osrmUrl.replace(/\/$/, '');
+  const candidateBases = Array.from(
+    new Set([osrmUrl.replace(/\/$/, ''), '/osrm', 'https://router.project-osrm.org']),
+  ).filter(Boolean);
 
-  // 1. Try single multi-waypoint call with steps=true
-  try {
-    const coordString = waypoints.map(([lat, lng]) => `${lng},${lat}`).join(';');
-    const endpoint = `${cleanUrl}/route/v1/driving/${coordString}?overview=full&geometries=geojson&steps=true`;
-    const res = await fetch(endpoint);
-    if (res.ok) {
-      const data = await res.json();
-      if (data.code === 'Ok' && Array.isArray(data.routes?.[0]?.legs)) {
-        const legsData = data.routes[0].legs;
-        const resultLegs: RouteLegDetail[] = [];
+  const coordString = waypoints.map(([lat, lng]) => `${lng},${lat}`).join(';');
 
-        for (let i = 0; i < legsData.length; i++) {
-          const leg = legsData[i];
-          const legCoords: [number, number][] = [];
-          if (Array.isArray(leg.steps)) {
-            for (const step of leg.steps) {
-              if (Array.isArray(step.geometry?.coordinates)) {
-                for (const [lon, lat] of step.geometry.coordinates) {
-                  if (
-                    legCoords.length === 0 ||
-                    legCoords[legCoords.length - 1][0] !== lat ||
-                    legCoords[legCoords.length - 1][1] !== lon
-                  ) {
-                    legCoords.push([lat, lon]);
+  // 1. Probar llamada multi-waypoint completa
+  for (const base of candidateBases) {
+    try {
+      const endpoint = `${base}/route/v1/driving/${coordString}?overview=full&geometries=geojson&steps=true`;
+      const res = await fetch(endpoint);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.code === 'Ok' && Array.isArray(data.routes?.[0]?.legs)) {
+          const legsData = data.routes[0].legs;
+          const resultLegs: RouteLegDetail[] = [];
+          let allLegsHaveCurves = true;
+
+          for (let i = 0; i < legsData.length; i++) {
+            const leg = legsData[i];
+            const legCoords: [number, number][] = [];
+            if (Array.isArray(leg.steps)) {
+              for (const step of leg.steps) {
+                if (Array.isArray(step.geometry?.coordinates)) {
+                  for (const [lon, lat] of step.geometry.coordinates) {
+                    if (
+                      legCoords.length === 0 ||
+                      legCoords[legCoords.length - 1][0] !== lat ||
+                      legCoords[legCoords.length - 1][1] !== lon
+                    ) {
+                      legCoords.push([lat, lon]);
+                    }
                   }
                 }
               }
             }
+
+            if (legCoords.length < 2) {
+              allLegsHaveCurves = false;
+              break;
+            }
+
+            resultLegs.push({
+              legIndex: i,
+              fromCoordinate: waypoints[i],
+              toCoordinate: waypoints[i + 1],
+              coordinates: legCoords,
+              distanceMeters: leg.distance,
+              durationSeconds: leg.duration,
+            });
           }
 
-          resultLegs.push({
-            legIndex: i,
-            fromCoordinate: waypoints[i],
-            toCoordinate: waypoints[i + 1],
-            coordinates: legCoords.length > 0 ? legCoords : [waypoints[i], waypoints[i + 1]],
-            distanceMeters: leg.distance,
-            durationSeconds: leg.duration,
-          });
-        }
-
-        if (resultLegs.length === waypoints.length - 1) {
-          return resultLegs;
-        }
-      }
-    }
-  } catch (err) {
-    console.warn('OSRM multi-waypoint legs call failed, falling back to pairwise legs:', err);
-  }
-
-  // 2. Pairwise fallback
-  const fallbackLegs: RouteLegDetail[] = [];
-  for (let i = 0; i < waypoints.length - 1; i++) {
-    const p1 = waypoints[i];
-    const p2 = waypoints[i + 1];
-    let legCoords: [number, number][] = [p1, p2];
-    let dist: number | undefined;
-    let dur: number | undefined;
-
-    try {
-      const legUrl = `${cleanUrl}/route/v1/driving/${p1[1]},${p1[0]};${p2[1]},${p2[0]}?overview=full&geometries=geojson`;
-      const legRes = await fetch(legUrl);
-      if (legRes.ok) {
-        const legData = await legRes.json();
-        if (legData.routes?.[0]?.geometry?.coordinates?.length) {
-          legCoords = legData.routes[0].geometry.coordinates.map(
-            ([lon, lat]: [number, number]) => [lat, lon],
-          );
-          dist = legData.routes[0].distance;
-          dur = legData.routes[0].duration;
+          if (allLegsHaveCurves && resultLegs.length === waypoints.length - 1) {
+            return resultLegs;
+          }
         }
       }
     } catch {
-      // Keep straight fallback
+      // Probar siguiente base
     }
-
-    fallbackLegs.push({
-      legIndex: i,
-      fromCoordinate: p1,
-      toCoordinate: p2,
-      coordinates: legCoords,
-      distanceMeters: dist,
-      durationSeconds: dur,
-    });
   }
 
-  return fallbackLegs;
+  // 2. Fallback pairwise en paralelo ultra-tolerante (garantiza curvas calle a calle)
+  const legs = await Promise.all(
+    Array.from({ length: waypoints.length - 1 }, async (_, i) => {
+      const p1 = waypoints[i];
+      const p2 = waypoints[i + 1];
+      const pair = await fetchOsrmPair(candidateBases, p1, p2);
+      return {
+        legIndex: i,
+        fromCoordinate: p1,
+        toCoordinate: p2,
+        coordinates: pair && pair.coordinates.length > 0 ? pair.coordinates : [p1, p2],
+        distanceMeters: pair?.distance,
+        durationSeconds: pair?.duration,
+      };
+    }),
+  );
+
+  return legs;
 }

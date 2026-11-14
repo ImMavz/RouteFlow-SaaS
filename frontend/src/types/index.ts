@@ -113,6 +113,11 @@ export interface VehicleRecord {
   status: BackendVehicleStatus;
   driverId?: string;
   driver?: DriverUser;
+  currentLat?: number;
+  currentLng?: number;
+  speedKmh?: number;
+  heading?: number;
+  lastTelemetryAt?: string;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -11,7 +11,7 @@ import type {
   DriverUser,
 } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const BASE_URL = import.meta.env.VITE_API_URL ?? '';
 
 export interface AuthUser {
   id: string;
@@ -199,6 +199,20 @@ export const vehiclesApi = {
   delete: (id: string): Promise<{ deleted: boolean; id: string }> => {
     return request<{ deleted: boolean; id: string }>(`/vehicles/${id}`, {
       method: 'DELETE',
+    });
+  },
+
+  getLiveFleet: (): Promise<VehicleRecord[]> => {
+    return request<VehicleRecord[]>('/vehicles/live');
+  },
+
+  updateTelemetry: (
+    id: string,
+    data: { lat: number; lng: number; speedKmh?: number; heading?: number },
+  ): Promise<VehicleRecord> => {
+    return request<VehicleRecord>(`/vehicles/${id}/telemetry`, {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   },
 };

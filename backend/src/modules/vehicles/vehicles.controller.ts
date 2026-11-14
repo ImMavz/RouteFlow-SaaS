@@ -11,6 +11,7 @@ import {
 import { VehiclesService } from './vehicles.service.js';
 import { CreateVehicleDto } from './dto/create-vehicle.dto.js';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto.js';
+import { UpdateTelemetryDto } from './dto/update-telemetry.dto.js';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 
@@ -30,6 +31,20 @@ export class VehiclesController {
   @Get()
   findAll(@CurrentUser('companyId') companyId: string) {
     return this.vehiclesService.findAll(companyId);
+  }
+
+  @Get('live')
+  getLive(@CurrentUser('companyId') companyId: string) {
+    return this.vehiclesService.getLiveTracking(companyId);
+  }
+
+  @Post(':id/telemetry')
+  updateTelemetry(
+    @CurrentUser('companyId') companyId: string,
+    @Param('id') id: string,
+    @Body() dto: UpdateTelemetryDto,
+  ) {
+    return this.vehiclesService.updateTelemetry(companyId, id, dto);
   }
 
   @Get(':id')

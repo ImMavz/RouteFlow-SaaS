@@ -8,6 +8,7 @@ import { RlsService } from '../../database/rls.service.js';
 import { Vehicle, type VehicleStatus } from './entities/vehicle.entity.js';
 import type { CreateVehicleDto } from './dto/create-vehicle.dto.js';
 import type { UpdateVehicleDto } from './dto/update-vehicle.dto.js';
+import type { UpdateTelemetryDto } from './dto/update-telemetry.dto.js';
 
 const VALID_STATUSES: VehicleStatus[] = ['active', 'maintenance', 'inactive'];
 
@@ -146,6 +147,44 @@ export class VehiclesService {
 
       await manager.remove(Vehicle, vehicle);
       return { deleted: true, id };
+    });
+  }
+
+  async updateTelemetry(
+    companyId: string,
+    id: string,
+    dto: UpdateTelemetryDto,
+  ): Promise<Vehicle> {
+    return this.rlsService.runWithTenant(companyId, async (manager) => {
+      const vehicle = await manager.findOne(Vehicle, {
+        where: { id, companyId },
+        relations: { driver: true },
+      });
+      if (!vehicle) {
+        throw new NotFoundException(`Vehículo con ID ${id} no encontrado`);
+      }
+
+      vehicle.currentLat = dto.lat;
+      vehicle.currentLng = dto.lng;
+      if (dto.speedKmh !== undefined) {
+        vehicle.speedKmh = dto.speedKmh;
+      }
+      if (dto.heading !== undefined) {
+        vehicle.heading = dto.heading;
+      }
+      vehicle.lastTelemetryAt = new Date();
+
+      return manager.save(Vehicle, vehicle);
+    });
+  }
+
+  async getLiveTracking(companyId: string): Promise<Vehicle[]> {
+    return this.rlsService.runWithTenant(companyId, async (manager) => {
+      return manager.find(Vehicle, {
+        where: { companyId, status: 'active' },
+        relations: { driver: true },
+        order: { lastTelemetryAt: 'DESC' },
+      });
     });
   }
 }
