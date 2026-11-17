@@ -95,6 +95,12 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   const data = isJson ? await response.json() : null;
 
   if (!response.ok) {
+    if (response.status === 401) {
+      tokenStorage.remove();
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('rf:unauthorized'));
+      }
+    }
     const errorMsg = data?.message || data?.error || `Error ${response.status}: ${response.statusText}`;
     throw new Error(errorMsg);
   }

@@ -95,6 +95,13 @@ const AppContent: React.FC = () => {
         setCurrentView('dashboard');
       }
     }
+
+    const handleUnauthorized = () => {
+      authStorage.clearSession();
+      setCurrentView('login');
+    };
+    window.addEventListener('rf:unauthorized', handleUnauthorized);
+    return () => window.removeEventListener('rf:unauthorized', handleUnauthorized);
   }, []);
 
   const handleLoginSuccess = (authUser?: BackendAuthUser) => {
