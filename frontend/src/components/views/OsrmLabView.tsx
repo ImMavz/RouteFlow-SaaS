@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { CircleHelp, ClipboardPaste, Code2, MapPinned, Play, RotateCcw, Route, Upload } from 'lucide-react';
 import { CircleMarker, MapContainer, Polyline, TileLayer, Tooltip, useMap } from 'react-leaflet';
 import type { LatLngBoundsExpression } from 'leaflet';
@@ -88,10 +88,29 @@ function parseOsrmJson(value: unknown): ParsedRoute {
 
 function FitRouteBounds({ coordinates }: { coordinates: Coordinate[] }) {
   const map = useMap();
+  const userInteractedRef = useRef(false);
+  const lastKeyRef = useRef('');
+
+  useEffect(() => {
+    const onUser = (e: any) => {
+      if (e?.originalEvent) userInteractedRef.current = true;
+    };
+    map.on('movestart zoomstart dragstart', onUser);
+    return () => {
+      map.off('movestart zoomstart dragstart', onUser);
+    };
+  }, [map]);
 
   useEffect(() => {
     if (coordinates.length >= 2) {
-      map.fitBounds(coordinates as LatLngBoundsExpression, { padding: [32, 32] });
+      const key = `${coordinates.length}-${coordinates[0][0]}-${coordinates[coordinates.length - 1][1]}`;
+      if (key !== lastKeyRef.current) {
+        lastKeyRef.current = key;
+        userInteractedRef.current = false;
+      }
+      if (!userInteractedRef.current) {
+        map.fitBounds(coordinates as LatLngBoundsExpression, { padding: [32, 32] });
+      }
     }
   }, [coordinates, map]);
 
@@ -110,7 +129,6 @@ export const OsrmLabView: React.FC = () => {
 
   const center = parsedRoute.coordinates[0] ?? [3.45, -76.53];
   const routeLine = parsedRoute.coordinates;
-  const bounds = useMemo(() => routeLine as LatLngBoundsExpression, [routeLine]);
 
   const applyJson = () => {
     try {
@@ -262,7 +280,13 @@ export const OsrmLabView: React.FC = () => {
           </div>
 
           <div className="relative h-[480px] w-full bg-slate-100 dark:bg-slate-950">
-            <MapContainer center={center} zoom={14} scrollWheelZoom className="h-full w-full" bounds={bounds}>
+            <MapContainer
+              center={center}
+              zoom={14}
+              scrollWheelZoom
+              bounceAtZoomLimits={false}
+              className="h-full w-full"
+            >
               <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
               <FitRouteBounds coordinates={routeLine} />
               <Polyline positions={routeLine} pathOptions={{ color: '#2563eb', weight: 4, opacity: 0.9 }} />

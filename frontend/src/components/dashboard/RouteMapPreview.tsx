@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { 
   Radio, 
   Loader2, 
   RefreshCw,
   MapPin,
+  Maximize2,
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
@@ -79,16 +80,85 @@ const createStopMarkerIcon = (sequence: number, status: string) => {
 function LiveMapController({
   focusCenter,
   allCoordinates,
+  resetTrigger,
+  selectedVehicleId,
 }: {
   focusCenter: [number, number] | null;
   allCoordinates: [number, number][];
+  resetTrigger?: number;
+  selectedVehicleId?: string;
 }) {
   const map = useMap();
+  const userInteractedRef = useRef(false);
+  const hasFittedInitialRef = useRef(false);
+  const lastSelectedVehicleRef = useRef(selectedVehicleId);
 
+  // 1. Detect manual user gestures via native container DOM events (wheel, touch, mouse drag)
   useEffect(() => {
-    if (focusCenter) {
-      map.setView(focusCenter, 15, { animate: true });
-    } else if (allCoordinates && allCoordinates.length > 0) {
+    const container = map.getContainer();
+    const markUserInteracted = () => {
+      userInteractedRef.current = true;
+    };
+
+    container.addEventListener('wheel', markUserInteracted, { passive: true });
+    container.addEventListener('touchstart', markUserInteracted, { passive: true });
+    container.addEventListener('pointerdown', markUserInteracted, { passive: true });
+    container.addEventListener('mousedown', markUserInteracted, { passive: true });
+
+    return () => {
+      container.removeEventListener('wheel', markUserInteracted);
+      container.removeEventListener('touchstart', markUserInteracted);
+      container.removeEventListener('pointerdown', markUserInteracted);
+      container.removeEventListener('mousedown', markUserInteracted);
+    };
+  }, [map]);
+
+  // 2. Explicit "Ajustar Vista" button click
+  useEffect(() => {
+    if (resetTrigger && resetTrigger > 0) {
+      userInteractedRef.current = false;
+      if (focusCenter) {
+        map.setView(focusCenter, 15, { animate: true });
+      } else if (allCoordinates && allCoordinates.length > 0) {
+        if (allCoordinates.length === 1) {
+          map.setView(allCoordinates[0], 14, { animate: true });
+        } else {
+          map.fitBounds(allCoordinates as L.LatLngBoundsExpression, {
+            padding: [45, 45],
+            maxZoom: 15,
+            animate: true,
+          });
+        }
+      }
+    }
+  }, [resetTrigger, focusCenter, allCoordinates, map]);
+
+  // 3. User changed selected vehicle from dropdown or marker click
+  useEffect(() => {
+    if (lastSelectedVehicleRef.current !== selectedVehicleId) {
+      lastSelectedVehicleRef.current = selectedVehicleId;
+      userInteractedRef.current = false;
+
+      if (focusCenter) {
+        map.setView(focusCenter, 15, { animate: true });
+      } else if (allCoordinates && allCoordinates.length > 0) {
+        if (allCoordinates.length === 1) {
+          map.setView(allCoordinates[0], 14, { animate: true });
+        } else {
+          map.fitBounds(allCoordinates as L.LatLngBoundsExpression, {
+            padding: [45, 45],
+            maxZoom: 15,
+            animate: true,
+          });
+        }
+      }
+    }
+  }, [selectedVehicleId, focusCenter, allCoordinates, map]);
+
+  // 4. Initial fit: runs ONLY once when data first loads, never on polling cycles
+  useEffect(() => {
+    if (!hasFittedInitialRef.current && allCoordinates && allCoordinates.length > 0) {
+      hasFittedInitialRef.current = true;
       if (allCoordinates.length === 1) {
         map.setView(allCoordinates[0], 14, { animate: true });
       } else {
@@ -99,7 +169,7 @@ function LiveMapController({
         });
       }
     }
-  }, [focusCenter, allCoordinates, map]);
+  }, [allCoordinates, map]);
 
   return null;
 }
@@ -112,6 +182,7 @@ export const RouteMapPreview: React.FC = () => {
   const [selectedStop, setSelectedStop] = useState<BackendRouteStop | null>(null);
   const [routeGeometries, setRouteGeometries] = useState<Record<string, [number, number][]>>({});
   const [lastTelemetryPulse, setLastTelemetryPulse] = useState<Date>(new Date());
+  const [mapResetTrigger, setMapResetTrigger] = useState<number>(0);
 
   // Fetch routes and live fleet positions
   const fetchLiveData = useCallback(async () => {
@@ -298,6 +369,16 @@ export const RouteMapPreview: React.FC = () => {
 
           <button
             type="button"
+            onClick={() => setMapResetTrigger((prev) => prev + 1)}
+            title="Ajustar y re-centrar mapa"
+            className="px-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer flex items-center gap-1"
+          >
+            <Maximize2 className="w-3.5 h-3.5 text-blue-500" />
+            <span className="hidden sm:inline">Ajustar Vista</span>
+          </button>
+
+          <button
+            type="button"
             onClick={fetchLiveData}
             title="Refrescar telemetría ahora"
             className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
@@ -319,6 +400,7 @@ export const RouteMapPreview: React.FC = () => {
             center={focusCenter || allCoordinates[0] || [3.4516, -76.532]}
             zoom={13}
             scrollWheelZoom={true}
+            bounceAtZoomLimits={false}
             className="h-full w-full z-0"
           >
             <TileLayer
@@ -326,7 +408,12 @@ export const RouteMapPreview: React.FC = () => {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
-            <LiveMapController focusCenter={focusCenter} allCoordinates={allCoordinates} />
+            <LiveMapController
+              focusCenter={focusCenter}
+              allCoordinates={allCoordinates}
+              resetTrigger={mapResetTrigger}
+              selectedVehicleId={selectedVehicleId}
+            />
 
             {/* Warehouse Markers */}
             {routes.map((r) => {

@@ -90,3 +90,9 @@ option {
   color: #f8fafc;
 }
 
+/* Prevent CSS transitions from interfering with Leaflet tile matrix transforms during zoom/pinch */
+.leaflet-container,
+.leaflet-container * {
+  transition: none !important;
+}
+

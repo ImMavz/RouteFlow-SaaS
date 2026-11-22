@@ -104,11 +104,56 @@ function MapController({
   mode: 'focus' | 'all';
 }) {
   const map = useMap();
+  const userInteractedRef = useRef(false);
+  const lastFocusCenterRef = useRef<[number, number] | null>(null);
+  const lastModeRef = useRef(mode);
+
+  // Detect manual user gestures (pinch zoom, dragging, wheel)
+  useEffect(() => {
+    const container = map.getContainer();
+    const markUserInteracted = () => {
+      userInteractedRef.current = true;
+    };
+
+    container.addEventListener('wheel', markUserInteracted, { passive: true });
+    container.addEventListener('touchstart', markUserInteracted, { passive: true });
+    container.addEventListener('pointerdown', markUserInteracted, { passive: true });
+    container.addEventListener('mousedown', markUserInteracted, { passive: true });
+
+    return () => {
+      container.removeEventListener('wheel', markUserInteracted);
+      container.removeEventListener('touchstart', markUserInteracted);
+      container.removeEventListener('pointerdown', markUserInteracted);
+      container.removeEventListener('mousedown', markUserInteracted);
+    };
+  }, [map]);
+
+  // Mode change explicitly resets user interaction
+  useEffect(() => {
+    if (lastModeRef.current !== mode) {
+      lastModeRef.current = mode;
+      userInteractedRef.current = false;
+    }
+  }, [mode]);
+
   useEffect(() => {
     if (focusCenter) {
-      map.setView(focusCenter, 16, { animate: true });
+      if (
+        !lastFocusCenterRef.current ||
+        lastFocusCenterRef.current[0] !== focusCenter[0] ||
+        lastFocusCenterRef.current[1] !== focusCenter[1]
+      ) {
+        lastFocusCenterRef.current = focusCenter;
+        userInteractedRef.current = false;
+        map.setView(focusCenter, 16, { animate: true });
+      }
       return;
     }
+
+    lastFocusCenterRef.current = null;
+
+    // Do NOT override manual user zoom/pan on continuous GPS pulse updates
+    if (userInteractedRef.current) return;
 
     const baseCoords =
       mode === 'focus' && activeCoordinates && activeCoordinates.length > 0
@@ -799,7 +844,8 @@ export const DriverMobileView: React.FC = () => {
         <MapContainer
           center={defaultCenter}
           zoom={14}
-          scrollWheelZoom={false}
+          scrollWheelZoom={true}
+          bounceAtZoomLimits={false}
           className="h-full w-full z-0"
         >
           <TileLayer
