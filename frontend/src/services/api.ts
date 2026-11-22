@@ -11,7 +11,7 @@ import type {
   DriverUser,
 } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? '';
+const BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/+$/, '');
 
 export interface AuthUser {
   id: string;
@@ -85,7 +85,8 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  const response = await fetch(`${BASE_URL}${cleanEndpoint}`, {
     ...options,
     headers,
   });

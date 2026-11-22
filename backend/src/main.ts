@@ -4,6 +4,12 @@ import { AppModule } from './app.module.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use((req: any, _res: any, next: any) => {
+    if (req.url && req.url.startsWith('//')) {
+      req.url = req.url.replace(/^\/+/, '/');
+  }
+  next();
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
