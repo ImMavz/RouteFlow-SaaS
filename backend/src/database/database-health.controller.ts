@@ -5,6 +5,12 @@ import { DataSource } from 'typeorm';
 export class DatabaseHealthController {
   constructor(private readonly dataSource: DataSource) {}
 
+  /** GET /health: verificación básica de liveness */
+  @Get()
+  health() {
+    return { status: 'ok', uptime: process.uptime() };
+  }
+
   /** GET /health/db: confirma que hay conexión y que PostGIS está activo. */
   @Get('db')
   async check() {

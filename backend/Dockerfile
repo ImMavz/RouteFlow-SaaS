@@ -24,4 +24,4 @@ COPY --from=build /app/dist ./dist
 COPY package.json ./
 USER node
 EXPOSE 3000
-CMD ["node", "dist/main"]
+CMD ["node", "dist/main.js"]
