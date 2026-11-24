@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Between } from 'typeorm';
 import { RlsService } from '../../database/rls.service.js';
 import { Delivery } from '../deliveries/entities/delivery.entity.js';
 import { Route } from '../routes/entities/route.entity.js';
@@ -66,19 +67,28 @@ export interface RouteOverviewItem {
 export class AnalyticsService {
   constructor(private readonly rlsService: RlsService) {}
 
-  async getSummary(companyId: string, queryDate?: string): Promise<DashboardSummaryResponse> {
+  async getSummary(companyId: string, queryDate?: string, startDate?: string, endDate?: string): Promise<DashboardSummaryResponse> {
     const targetDate = queryDate || new Date().toISOString().slice(0, 10);
+    const isRange = Boolean(startDate && endDate);
 
     return this.rlsService.runWithTenant(companyId, async (manager) => {
-      // 1. Agregación de entregas por estado para targetDate
-      const deliveryRows = await manager
+      // 1. Agregación de entregas por estado para targetDate o rango de fechas
+      const deliveryQb = manager
         .createQueryBuilder(Delivery, 'd')
         .select('d.status', 'status')
         .addSelect('COUNT(*)', 'count')
-        .where('d.company_id = :companyId', { companyId })
-        .andWhere('d.delivery_date = :targetDate', { targetDate })
-        .groupBy('d.status')
-        .getRawMany();
+        .where('d.company_id = :companyId', { companyId });
+
+      if (isRange) {
+        deliveryQb.andWhere('d.delivery_date >= :startDate AND d.delivery_date <= :endDate', {
+          startDate,
+          endDate,
+        });
+      } else {
+        deliveryQb.andWhere('d.delivery_date = :targetDate', { targetDate });
+      }
+
+      const deliveryRows = await deliveryQb.groupBy('d.status').getRawMany();
 
       const counts: Record<string, number> = {
         [DeliveryStatus.PENDING]: 0,
@@ -104,9 +114,16 @@ export class AnalyticsService {
           ? 100
           : 0;
 
-      // 2. Consulta de rutas del día con vehículos
+      // 2. Consulta de rutas del día o rango con vehículos
+      const routeWhere: any = { companyId };
+      if (isRange) {
+        routeWhere.routeDate = Between(startDate!, endDate!);
+      } else {
+        routeWhere.routeDate = targetDate;
+      }
+
       const routes = await manager.find(Route, {
-        where: { companyId, routeDate: targetDate },
+        where: routeWhere,
         relations: { vehicle: true },
       });
 
@@ -229,12 +246,20 @@ export class AnalyticsService {
     });
   }
 
-  async getActiveRoutesOverview(companyId: string, queryDate?: string): Promise<RouteOverviewItem[]> {
+  async getActiveRoutesOverview(companyId: string, queryDate?: string, startDate?: string, endDate?: string): Promise<RouteOverviewItem[]> {
     const targetDate = queryDate || new Date().toISOString().slice(0, 10);
+    const isRange = Boolean(startDate && endDate);
 
     return this.rlsService.runWithTenant(companyId, async (manager) => {
+      const routeWhere: any = { companyId };
+      if (isRange) {
+        routeWhere.routeDate = Between(startDate!, endDate!);
+      } else {
+        routeWhere.routeDate = targetDate;
+      }
+
       const routes = await manager.find(Route, {
-        where: { companyId, routeDate: targetDate },
+        where: routeWhere,
         relations: {
           vehicle: true,
           driver: true,

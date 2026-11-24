@@ -3,12 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Delivery } from './entities/delivery.entity.js';
 import { CsvImport } from './entities/csv-import.entity.js';
 import { DeliveryEvent } from './entities/delivery-event.entity.js';
+import { RouteStop } from '../routes/entities/route-stop.entity.js';
+import { Route } from '../routes/entities/route.entity.js';
 import { DeliveriesService } from './deliveries.service.js';
 import { CsvImportService } from './csv-import.service.js';
 import { DeliveriesController } from './deliveries.controller.js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Delivery, CsvImport, DeliveryEvent])],
+  imports: [TypeOrmModule.forFeature([Delivery, CsvImport, DeliveryEvent, RouteStop, Route])],
   controllers: [DeliveriesController],
   providers: [DeliveriesService, CsvImportService],
   exports: [DeliveriesService, CsvImportService],

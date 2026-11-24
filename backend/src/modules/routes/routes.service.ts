@@ -69,6 +69,8 @@ export class RoutesService {
         .leftJoinAndSelect('r.vehicle', 'vehicle')
         .leftJoinAndSelect('r.warehouse', 'warehouse')
         .leftJoinAndSelect('r.driver', 'driver')
+        .leftJoinAndSelect('r.stops', 'stops')
+        .leftJoinAndSelect('stops.delivery', 'delivery')
         .where('r.companyId = :companyId', { companyId });
 
       if (filter.routeDate) {
@@ -79,7 +81,9 @@ export class RoutesService {
         qb.andWhere('r.vehicleId = :vehicleId', { vehicleId: filter.vehicleId });
       }
 
-      qb.orderBy('r.routeDate', 'DESC').addOrderBy('r.createdAt', 'DESC');
+      qb.orderBy('r.routeDate', 'DESC')
+        .addOrderBy('r.createdAt', 'DESC')
+        .addOrderBy('stops.sequence', 'ASC');
 
       return qb.getMany();
     });

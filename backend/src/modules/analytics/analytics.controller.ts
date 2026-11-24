@@ -14,7 +14,7 @@ export class AnalyticsController {
     @CurrentUser('companyId') companyId: string,
     @Query() query: DashboardQueryDto,
   ) {
-    return this.analyticsService.getSummary(companyId, query.date);
+    return this.analyticsService.getSummary(companyId, query.date, query.startDate, query.endDate);
   }
 
   @Get('weekly-volume')
@@ -30,6 +30,6 @@ export class AnalyticsController {
     @CurrentUser('companyId') companyId: string,
     @Query() query: DashboardQueryDto,
   ) {
-    return this.analyticsService.getActiveRoutesOverview(companyId, query.date);
+    return this.analyticsService.getActiveRoutesOverview(companyId, query.date, query.startDate, query.endDate);
   }
 }

@@ -5,7 +5,9 @@ import {
   Calendar,
   RotateCw,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { MetricCards } from '../dashboard/MetricCards';
 import { EfficiencyCharts } from '../dashboard/EfficiencyCharts';
@@ -32,6 +34,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 }) => {
   const todayStr = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [timeframe, setTimeframe] = useState<'day' | 'week'>('day');
 
   const [summary, setSummary] = useState<DashboardSummaryResponse | null>(null);
   const [weeklyVolume, setWeeklyVolume] = useState<WeeklyVolumeItem[]>([]);
@@ -40,14 +43,45 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [bannerNotice, setBannerNotice] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const loadDashboard = useCallback(async (date: string) => {
+  const getWeekRange = useCallback((dateStr: string) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const curr = new Date(Date.UTC(y, m - 1, d));
+    const day = curr.getUTCDay();
+    const diffToMon = (day + 6) % 7;
+    const mon = new Date(curr);
+    mon.setUTCDate(curr.getUTCDate() - diffToMon);
+    const sun = new Date(mon);
+    sun.setUTCDate(mon.getUTCDate() + 6);
+    return {
+      startDate: mon.toISOString().slice(0, 10),
+      endDate: sun.toISOString().slice(0, 10),
+      label: `${mon.getUTCDate()} ${mon.toLocaleString('es-CO', { month: 'short', timeZone: 'UTC' })} - ${sun.getUTCDate()} ${sun.toLocaleString('es-CO', { month: 'short', timeZone: 'UTC' })}`,
+    };
+  }, []);
+
+  const currentWeek = useMemo(() => getWeekRange(selectedDate), [selectedDate, getWeekRange]);
+  const isCurrentWeek = useMemo(() => {
+    const todayWeek = getWeekRange(todayStr);
+    return currentWeek.startDate === todayWeek.startDate;
+  }, [currentWeek, todayStr, getWeekRange]);
+
+  const shiftDays = (days: number) => {
+    const [y, m, d] = selectedDate.split('-').map(Number);
+    const curr = new Date(Date.UTC(y, m - 1, d));
+    curr.setUTCDate(curr.getUTCDate() + days);
+    setSelectedDate(curr.toISOString().slice(0, 10));
+  };
+
+  const loadDashboard = useCallback(async (date: string, mode: 'day' | 'week') => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
+      const isWeek = mode === 'week';
+      const range = isWeek ? getWeekRange(date) : null;
       const [sum, weekly, rts] = await Promise.all([
-        analyticsApi.getSummary(date),
-        analyticsApi.getWeeklyVolume(date),
-        analyticsApi.getActiveRoutes(date),
+        analyticsApi.getSummary(isWeek ? { startDate: range!.startDate, endDate: range!.endDate } : date),
+        analyticsApi.getWeeklyVolume(isWeek ? range!.endDate : date),
+        analyticsApi.getActiveRoutes(isWeek ? { startDate: range!.startDate, endDate: range!.endDate } : date),
       ]);
       setSummary(sum);
       setWeeklyVolume(weekly);
@@ -57,11 +91,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [getWeekRange]);
 
   useEffect(() => {
-    loadDashboard(selectedDate);
-  }, [selectedDate, loadDashboard]);
+    loadDashboard(selectedDate, timeframe);
+  }, [selectedDate, timeframe, loadDashboard]);
+
+  // Real-time silent polling every 4s to sync driver delivery updates instantly
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const isWeek = timeframe === 'week';
+      const range = isWeek ? getWeekRange(selectedDate) : null;
+      Promise.all([
+        analyticsApi.getSummary(isWeek ? { startDate: range!.startDate, endDate: range!.endDate } : selectedDate),
+        analyticsApi.getWeeklyVolume(isWeek ? range!.endDate : selectedDate),
+        analyticsApi.getActiveRoutes(isWeek ? { startDate: range!.startDate, endDate: range!.endDate } : selectedDate),
+      ])
+        .then(([sum, weekly, rts]) => {
+          setSummary(sum);
+          setWeeklyVolume(weekly);
+          setRoutes(rts);
+        })
+        .catch(() => {});
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [selectedDate, timeframe, getWeekRange]);
 
   // Transform backend analytics summary to MetricCards KPIStats
   const kpiStats: KPIStats = useMemo(() => {
@@ -106,10 +160,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       const companyName = user?.companyName || user?.company || 'RouteFlow Operations';
 
       const manifestData: RouteManifestData = {
-        manifestNumber: `REP-${selectedDate.replace(/-/g, '')}-EXEC`,
-        routeDate: selectedDate,
+        manifestNumber: `REP-${selectedDate.replace(/-/g, '')}-${timeframe.toUpperCase()}`,
+        routeDate: timeframe === 'week' ? `${currentWeek.startDate} a ${currentWeek.endDate}` : selectedDate,
         companyName,
-        warehouseName: 'Consolidado General de Operaciones',
+        warehouseName: timeframe === 'week' ? 'Consolidado Semanal de Operaciones' : 'Consolidado General de Operaciones',
         warehouseAddress: 'Sede Central',
         vehiclePlate: routes[0]?.vehiclePlate || 'FLOTA GENERAL',
         vehicleName: `${summary?.fleet.activeVehicles || 0} Vehículos Asignados`,
@@ -130,7 +184,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       };
 
       await generateRouteManifestPdf(manifestData);
-      setBannerNotice(`Informe de despacho para ${selectedDate} descargado exitosamente.`);
+      setBannerNotice(`Informe de despacho (${timeframe === 'week' ? 'semanal' : 'diario'}) descargado exitosamente.`);
     } catch (err: any) {
       setErrorMessage(err.message || 'Error al generar informe PDF');
     }
@@ -182,44 +236,105 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 Torre de Control Logística
               </h2>
               <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Despacho en Vivo
               </span>
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
               {summary
-                ? `${summary.fleet.activeVehicles} vehículos en ruta · ${summary.vrp.totalDistanceKm} km optimizados · ${summary.deliveries.fulfillmentRate}% efectividad`
+                ? `${timeframe === 'week' ? 'Consolidado semanal' : 'Operación del día'}: ${summary.fleet.activeVehicles} vehículos · ${summary.vrp.totalDistanceKm} km · ${summary.deliveries.delivered} entregados (${summary.deliveries.fulfillmentRate}%)`
                 : 'Sincronizando métricas operativas con PostgreSQL...'}
             </p>
           </div>
         </div>
 
-        {/* Date Selector & Action group */}
+        {/* Date / Week Selector & Action group */}
         <div className="flex items-center gap-2 flex-wrap self-start md:self-auto">
-          {/* Date Selector */}
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs">
-            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-transparent text-slate-800 dark:text-slate-200 font-mono text-xs focus:outline-none cursor-pointer"
-            />
-            {selectedDate !== todayStr && (
+          {/* Timeframe Toggle */}
+          <div className="flex items-center p-0.5 rounded-md bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
+            <button
+              type="button"
+              onClick={() => setTimeframe('day')}
+              className={`px-2 py-1 rounded text-xs transition-colors cursor-pointer ${
+                timeframe === 'day'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              Día
+            </button>
+            <button
+              type="button"
+              onClick={() => setTimeframe('week')}
+              className={`px-2 py-1 rounded text-xs transition-colors cursor-pointer ${
+                timeframe === 'week'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium shadow-xs'
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'
+              }`}
+            >
+              Semana
+            </button>
+          </div>
+
+          {/* Day Mode: Standard Date Picker */}
+          {timeframe === 'day' ? (
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs">
+              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="bg-transparent text-slate-800 dark:text-slate-200 font-mono text-xs focus:outline-none cursor-pointer"
+              />
+              {selectedDate !== todayStr && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate(todayStr)}
+                  className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-semibold ml-1 cursor-pointer"
+                >
+                  Hoy
+                </button>
+              )}
+            </div>
+          ) : (
+            /* Week Mode: Week Navigator */
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs">
               <button
                 type="button"
-                onClick={() => setSelectedDate(todayStr)}
-                className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-semibold ml-1 cursor-pointer"
+                onClick={() => shiftDays(-7)}
+                className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-pointer"
+                title="Semana anterior"
               >
-                Hoy
+                <ChevronLeft className="w-3.5 h-3.5" />
               </button>
-            )}
-          </div>
+              <div className="flex items-center gap-1 font-mono text-slate-800 dark:text-slate-200 text-xs px-1">
+                <Calendar className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                <span>{currentWeek.label}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => shiftDays(7)}
+                className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-pointer"
+                title="Semana siguiente"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+              {!isCurrentWeek && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate(todayStr)}
+                  className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline font-semibold ml-1 cursor-pointer"
+                >
+                  Esta Semana
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Refresh Button */}
           <button
             type="button"
-            onClick={() => loadDashboard(selectedDate)}
+            onClick={() => loadDashboard(selectedDate, timeframe)}
             disabled={isLoading}
             className="p-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             title="Recargar analíticas"
@@ -267,7 +382,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <LiveRoutesTable 
         routes={routes}
         isLoading={isLoading}
-        onRefresh={() => loadDashboard(selectedDate)}
+        onRefresh={() => loadDashboard(selectedDate, timeframe)}
         onSelectRoute={onSelectRoute}
       />
 

@@ -95,7 +95,7 @@ export const LiveRoutesTable: React.FC<LiveRoutesTableProps> = ({
               Despacho & Ejecución de Rutas VRP
             </h3>
             <span className="px-1.5 py-0.2 rounded font-mono text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-              {mockRoutes.length} rutas
+              {dataSource.length} rutas
             </span>
           </div>
           <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">

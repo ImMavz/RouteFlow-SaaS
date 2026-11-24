@@ -472,17 +472,45 @@ export interface RouteOverviewItem {
   efficiencyScore: number;
 }
 
+export interface AnalyticsDateQuery {
+  date?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 export const analyticsApi = {
-  getSummary: (date?: string): Promise<DashboardSummaryResponse> => {
-    return request<DashboardSummaryResponse>(`/analytics/summary${date ? `?date=${date}` : ''}`);
+  getSummary: (params?: string | AnalyticsDateQuery): Promise<DashboardSummaryResponse> => {
+    let query = '';
+    if (typeof params === 'string') {
+      query = `?date=${params}`;
+    } else if (params) {
+      const q = new URLSearchParams();
+      if (params.date) q.set('date', params.date);
+      if (params.startDate) q.set('startDate', params.startDate);
+      if (params.endDate) q.set('endDate', params.endDate);
+      const str = q.toString();
+      if (str) query = `?${str}`;
+    }
+    return request<DashboardSummaryResponse>(`/analytics/summary${query}`);
   },
 
   getWeeklyVolume: (endDate?: string): Promise<WeeklyVolumeItem[]> => {
     return request<WeeklyVolumeItem[]>(`/analytics/weekly-volume${endDate ? `?endDate=${endDate}` : ''}`);
   },
 
-  getActiveRoutes: (date?: string): Promise<RouteOverviewItem[]> => {
-    return request<RouteOverviewItem[]>(`/analytics/routes${date ? `?date=${date}` : ''}`);
+  getActiveRoutes: (params?: string | AnalyticsDateQuery): Promise<RouteOverviewItem[]> => {
+    let query = '';
+    if (typeof params === 'string') {
+      query = `?date=${params}`;
+    } else if (params) {
+      const q = new URLSearchParams();
+      if (params.date) q.set('date', params.date);
+      if (params.startDate) q.set('startDate', params.startDate);
+      if (params.endDate) q.set('endDate', params.endDate);
+      const str = q.toString();
+      if (str) query = `?${str}`;
+    }
+    return request<RouteOverviewItem[]>(`/analytics/routes${query}`);
   },
 };
 

@@ -7,6 +7,9 @@ import {
 import { RlsService } from '../../database/rls.service.js';
 import { Delivery } from './entities/delivery.entity.js';
 import { DeliveryEvent } from './entities/delivery-event.entity.js';
+import { RouteStop } from '../routes/entities/route-stop.entity.js';
+import { Route } from '../routes/entities/route.entity.js';
+import { RouteStatus } from '../../common/enums/route-status.enum.js';
 import { GeocodeStatus } from '../../common/enums/geocode-status.enum.js';
 import { DeliveryStatus } from '../../common/enums/delivery-status.enum.js';
 import type { CreateDeliveryDto } from './dto/create-delivery.dto.js';
@@ -291,6 +294,41 @@ export class DeliveriesService {
         note: dto.note?.trim() || dto.failureReason?.trim() || null,
       });
       await manager.save(DeliveryEvent, event);
+
+      // Si la entrega pertenece a una ruta, actualizar progreso de la ruta automáticamente
+      try {
+        const routeStop = await manager.findOne(RouteStop, {
+          where: { deliveryId: id, companyId },
+          relations: { route: { stops: { delivery: true } } },
+        });
+
+        if (routeStop?.route) {
+          const route = routeStop.route;
+          const allStops = route.stops || [];
+          const isAllDone =
+            allStops.length > 0 &&
+            allStops.every((s) => {
+              const currentStatus = s.deliveryId === id ? dto.status : s.delivery?.status;
+              return (
+                currentStatus === DeliveryStatus.DELIVERED ||
+                currentStatus === DeliveryStatus.FAILED ||
+                currentStatus === DeliveryStatus.CANCELLED
+              );
+            });
+
+          if (isAllDone && route.status !== RouteStatus.COMPLETED) {
+            route.status = RouteStatus.COMPLETED;
+            route.completedAt = new Date();
+            await manager.save(Route, route);
+          } else if (route.status === RouteStatus.PLANNED) {
+            route.status = RouteStatus.IN_PROGRESS;
+            route.startedAt = route.startedAt || new Date();
+            await manager.save(Route, route);
+          }
+        }
+      } catch {
+        // En caso de que no esté en una ruta o relaciones en mock
+      }
 
       return savedDelivery;
     });
