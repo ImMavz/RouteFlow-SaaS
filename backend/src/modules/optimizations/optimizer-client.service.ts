@@ -57,9 +57,9 @@ export class OptimizerClientService {
   private readonly baseUrl: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.baseUrl =
-      this.configService.get<string>('OPTIMIZER_URL') ||
-      'http://localhost:8000';
+    this.baseUrl = (
+      this.configService.get<string>('OPTIMIZER_URL') || 'http://localhost:8000'
+    ).replace(/\/+$/, '');
   }
 
   async solve(payload: OptimizeRequestDto): Promise<OptimizeResponseDto> {
