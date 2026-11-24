@@ -99,5 +99,21 @@ describe('OptimizerClientService', () => {
       }),
     ).rejects.toThrow(BadGatewayException);
   });
+
+  it('debe manejar respuestas de error HTML (p. ej. Render cold start 502) sin lanzar Body unusable', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      text: vi.fn().mockResolvedValue('<html>Bad Gateway</html>'),
+    });
+
+    await expect(
+      service.solve({
+        depot: { id: 'depot-1', location: { lat: 4.6, lon: -74.08 } },
+        vehicles: [{ id: 'veh-1', capacity_kg: 1000 }],
+        deliveries: [],
+      }),
+    ).rejects.toThrow(BadGatewayException);
+  });
 });
 

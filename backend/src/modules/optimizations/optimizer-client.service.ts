@@ -89,34 +89,50 @@ export class OptimizerClientService {
       );
     }
 
-    if (!response.ok) {
-      let errorBody: any = null;
-      try {
-        errorBody = await response.json();
-      } catch {
-        errorBody = await response.text();
+    let body: any = null;
+    try {
+      if (typeof response.text === 'function') {
+        const rawText = await response.text();
+        try {
+          body = JSON.parse(rawText);
+        } catch {
+          body = rawText;
+        }
+      } else if (typeof response.json === 'function') {
+        body = await response.json();
       }
+    } catch {
+      body = null;
+    }
+
+    if (!response.ok) {
+      const formattedError = typeof body === 'object' ? JSON.stringify(body) : String(body || '');
 
       if (response.status === 422) {
         throw new UnprocessableEntityException({
           message: 'Error de validación en los datos enviados al optimizador',
-          details: errorBody,
+          details: body,
         });
       }
 
       if (response.status === 502 || response.status === 503) {
         throw new BadGatewayException(
-          `El motor OSRM o el solver de rutas reportó un error: ${JSON.stringify(errorBody)}`,
+          `El motor OSRM o el solver de rutas reportó un error (${response.status}): ${formattedError}`,
         );
       }
 
       throw new BadGatewayException(
-        `El servicio de optimización respondió con código ${response.status}: ${JSON.stringify(errorBody)}`,
+        `El servicio de optimización respondió con código ${response.status}: ${formattedError}`,
       );
     }
 
-    const data = (await response.json()) as OptimizeResponseDto;
-    return data;
+    if (!body || typeof body !== 'object') {
+      throw new BadGatewayException(
+        `Respuesta inesperada del optimizador: se esperaba JSON pero se recibió: ${body}`,
+      );
+    }
+
+    return body as OptimizeResponseDto;
   }
 }
 
