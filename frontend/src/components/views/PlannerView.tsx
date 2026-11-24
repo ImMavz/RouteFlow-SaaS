@@ -414,7 +414,9 @@ export const PlannerView: React.FC<PlannerViewProps> = ({ onNavigate }) => {
       const msg = err.message || '';
       if (msg.includes('502') || msg.toLowerCase().includes('bad gateway')) {
         setErrorBanner(
-          'Error 502 (Bad Gateway): El microservicio de ruteo vial OSRM o solver VRP no responde. Verifica que esté activo en el puerto configurado.',
+          msg.length > 30
+            ? msg
+            : 'Error 502 (Bad Gateway): El microservicio optimizador en Render está iniciando (arranque en frío de instancia gratuita). Espera unos 30 segundos a que despierte y vuelve a intentar.',
         );
       } else if (msg.includes('422') || msg.toLowerCase().includes('infeasible')) {
         setErrorBanner(

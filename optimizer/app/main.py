@@ -21,12 +21,12 @@ async def no_solution_handler(_, exc: NoSolutionError):
     return JSONResponse(status_code=422, content={"status": "error", "message": str(exc)})
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 async def root():
     return {"status": "ok", "service": "RouteFlow Optimizer"}
 
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 async def health():
     return {"status": "ok"}
 
