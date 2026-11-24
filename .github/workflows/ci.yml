@@ -43,12 +43,12 @@ jobs:
       - name: Backend Lint
         run: |
           cd backend
-          pnpm run lint --if-present
+          pnpm run lint
 
       - name: Backend Tests
         run: |
           cd backend
-          pnpm run test --if-present
+          pnpm run test
 
       - name: Backend Build
         run: |
@@ -64,12 +64,12 @@ jobs:
       - name: Frontend Lint
         run: |
           cd frontend
-          pnpm run lint --if-present
+          pnpm run lint
 
       - name: Frontend Tests
         run: |
           cd frontend
-          pnpm run test --if-present
+          pnpm run --if-present test
 
       - name: Frontend Build
         run: |
